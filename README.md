@@ -38,6 +38,8 @@ Le mode exemple utilise un stockage séparé. Il n’écrase pas les données pe
 Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple et largeur des écrans.
 Pour les lancer : `npm install`, `npx playwright install chromium`, `npm run test:browser`.
 
+Dernier passage vérifié : **48 tests de calcul et 18 essais navigateur réussis** (Chromium ordinateur et téléphone).
+[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883).
 Résultats et limites dans [docs/verification.md](docs/verification.md).
 Les captures et traces des essais sont dans les artefacts GitHub Actions (7 jours).
 

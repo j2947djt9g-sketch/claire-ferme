@@ -14,7 +14,11 @@ Le stockage est local au navigateur. Une sauvegarde JSON reste nécessaire pour 
 ## Parcours dans un navigateur
 GitHub Actions exécute Playwright dans Chromium, sur une largeur d’ordinateur et un profil de téléphone.
 Premier passage : 12 parcours réussis sur 14. Le libellé accessible du sélecteur de poste empêchait la sélection par son nom exact ; correction du nom accessible, puis nouvelle exécution.
-Le passage suivant couvre également l’échec de sauvegarde et la restauration d’un fichier illisible.
+Deuxième passage : **18 essais réussis sur 18**, soit 9 parcours sur ordinateur et 9 sur téléphone. Il couvre aussi l’échec de sauvegarde et la restauration d’un fichier illisible.
+
+Code vérifié : `b4b7032e04d6606a9ad2aa67ecf5a38e435af499`.
+Résultat : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883
+Captures et rapport : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883/artifacts/12291696360
 
 ## Points de calcul essentiels
 Les hypothèses sont distinctes des opérations réelles. Les prévisions de poulets vendables sont arrondies à l’entier inférieur. Les montants sont des FCFA entiers.
