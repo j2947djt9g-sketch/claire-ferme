@@ -66,7 +66,7 @@ export function validate(s,at=today()){
  name(s.settings.farmName,"Nom de la ferme");num(s.settings.openingCash,"Trésorerie initiale", -1e12);num(s.settings.stockThresholdKg,"Seuil de stock",0,false);
  const lists=["cycles","expenses","lots","uses","sales","losses","contributions"],ids=new Set();
  for(const k of lists){must(Array.isArray(s[k])&&s[k].length<=20000,"Liste "+k+" invalide.");for(const x of s[k]){must(x&&typeof x==="object","Ligne invalide.");name(x.id,"Identifiant");must(!ids.has(x.id),"Identifiant en double.");ids.add(x.id);}}
- must(s.selectedCycleId===null||s.cycles.some(c=>c.id===s.selectedCycleId),"Cycle sélectionné inconnu.");
+ must(s.cycles.length?s.cycles.some(c=>c.id===s.selectedCycleId):s.selectedCycleId===null,"Cycle sélectionné inconnu.");
  for(const c of s.cycles){
   name(c.name,"Nom du cycle");date(c.startDate,"Début");num(c.targetDays,"Durée",1);must(c.targetDays<=730,"Durée maximale : 730 jours.");num(c.initialCount,"Effectif",1);
   for(const key of ["budget","remaining"]){must(c[key]&&typeof c[key]==="object","Budget absent.");for(const k of KEYS)num(c[key][k],CATEGORIES[k]);}
@@ -142,6 +142,7 @@ export function apply(s,action,at=today()){
 export function alerts(s,id,at=today()){
  const a=[],m=metrics(s,id,at),f=farm(s);
  if(m){
+  if(!m.cycle.closedAt&&m.cycle.params&&m.dead/m.cycle.initialCount*100>m.cycle.params.expectedMortality)a.push({tone:"warn",title:"Pertes à surveiller",text:"La mortalité réelle dépasse votre hypothèse. Réévaluez les ventes restant à réaliser."});
   if(m.forecastCost>m.budget)a.push({tone:"warn",title:"Budget à revoir",text:"Le coût final prévu dépasse le budget de départ."});
   if(m.forecastMargin<m.cycle.targetMargin)a.push({tone:"warn",title:"Objectif de bénéfice",text:"Le bénéfice prévu est inférieur à votre objectif."});
   if(m.day>m.cycle.targetDays&&!m.cycle.closedAt)a.push({tone:"warn",title:"Cycle arrivé à terme",text:"Vérifiez les ventes et les charges restant à engager."});

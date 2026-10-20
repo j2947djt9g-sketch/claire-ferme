@@ -4,7 +4,7 @@ const money=n=>new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0}).format(n
 const qty=n=>new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2}).format(n);
 const niceDate=d=>new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00"));
 const STORE="clair.ferme.v2",DEMO="clair.ferme.demo.v2";
-let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer;
+let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer,savedRaw=null;
 const icons={
 home:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
 journal:'<path d="M8 3H5v18h14V3h-3M8 3v4h8V3zM8 12h8M8 16h5"/>',
@@ -24,18 +24,23 @@ const badge=(text,tone="")=>'<span class="badge '+tone+'">'+esc(text)+'</span>';
 function toast(t){clearTimeout(toastTimer);$("#toast").textContent=t;$("#toast").classList.add("visible");toastTimer=setTimeout(()=>$("#toast").classList.remove("visible"),4500);}
 function save(next){
  validate(next);
- try{localStorage.setItem(mode==="demo"?DEMO:STORE,JSON.stringify(next));}
+ const key=mode==="demo"?DEMO:STORE;
+ let raw;
+ try{raw=localStorage.getItem(key);}catch{throw Error("Le stockage de ce navigateur est indisponible. Autorisez le stockage local pour conserver vos saisies.");}
+ if(raw!==savedRaw)throw Error("Les données ont changé dans un autre onglet. Rechargez la page avant de continuer pour conserver ces modifications.");
+ const serialized=JSON.stringify(next);
+ try{localStorage.setItem(key,serialized);}
  catch{throw Error("La sauvegarde sur cet appareil a échoué. Libérez de l’espace ou exportez vos données avant de continuer.");}
- state=next;lastSaved=new Date();render();
+ savedRaw=serialized;loadError=null;state=next;lastSaved=new Date();render();
 }
 function perform(type,data){save(apply(state,{type,data}));toast("Enregistré sur cet appareil.");}
 function load(){
- try{const raw=localStorage.getItem(STORE);state=raw?validate(JSON.parse(raw)):blank();}
+ try{const raw=localStorage.getItem(STORE);savedRaw=raw;state=raw?validate(JSON.parse(raw)):blank();}
  catch(e){loadError=e.message;state=blank();}
 }
 const field=(label,name,value="",type="number",extra="")=>'<label class="field"><span>'+label+'</span><input name="'+name+'" type="'+type+'" value="'+esc(value)+'" '+(type==="number"?'min="0" step="1" inputmode="numeric" ':'')+extra+'></label>';
 const dateField=(name="date",value=today())=>field("Date",name,value,"date",'required max="'+today()+'"');
-const select=(label,name,options,extra="")=>'<label class="field"><span>'+label+'</span><select name="'+name+'" '+extra+'>'+options+'</select></label>';
+const select=(label,name,options,extra="")=>'<label class="field"><span>'+label+'</span><select aria-label="'+esc(label)+'" name="'+name+'" '+extra+'>'+options+'</select></label>';
 const option=(value,label,selected=false)=>'<option value="'+esc(value)+'"'+(selected?" selected":"")+'>'+esc(label)+'</option>';
 const check=(name,text,checked=true)=>'<label class="check"><input type="checkbox" name="'+name+'" '+(checked?"checked":"")+'><span>'+text+'</span></label>';
 const note=t=>'<p class="helper">'+t+'</p>';
@@ -51,7 +56,7 @@ function render(){
  if(!state.cycles.length){root.innerHTML=welcome();return;}
  const c=state.cycles.find(c=>c.id===state.selectedCycleId)||state.cycles[0];
  const nav=[["home","Vue d’ensemble"],["journal","Opérations"],["stock","Aliments"],["cycles","Cycles et budgets"],["settings","Sauvegarde"]];
- root.innerHTML='<aside class="sidebar"><a href="#home" class="brand" data-page="home"><span class="brand-mark">c.</span><span>clair<span class="brand-sub">FERME</span></span></a><div class="farm-name">'+icon("leaf")+'<span>'+esc(state.settings.farmName)+'</span></div><p class="nav-label">MON EXPLOITATION</p><nav aria-label="Navigation principale">'+nav.map(([id,label])=>'<button class="nav-item '+(page===id?"active":"")+'" data-page="'+id+'" '+(page===id?'aria-current="page"':"")+'>'+icon(id)+'<span>'+label+'</span></button>').join("")+'</nav><div class="sidebar-bottom"><span class="live-dot"></span> '+(mode==="demo"?"Exemple fictif":"Vos données, sur cet appareil")+'<p>Un cycle après l’autre.<br>Une ferme au clair.</p></div></aside><div class="workspace"><header class="topbar"><span class="top-label">Votre ferme, au clair.</span><label class="cycle-picker"><span class="sr-only">Cycle affiché</span>'+icon("cycles")+'<select id="cycle-picker">'+state.cycles.map(x=>option(x.id,x.name+" · "+status(x),x.id===c.id)).join("")+'</select></label><span class="saved">'+icon("check")+' '+(lastSaved?"Enregistré":"Sauvegarde locale")+'</span></header>'+(mode==="demo"?'<div class="demo-banner"><strong>Mode exemple</strong> · Ces chiffres sont fictifs. '+btn("Passer à mes données","real","button text")+'</div>':"")+'<main id="main" tabindex="-1">'+({home:home,journal:journal,stock:stockPage,cycles:cyclesPage,settings:settingsPage}[page]||home)(c)+'</main><footer class="footer">Clair Ferme <span>Montants en FCFA · '+esc(state.settings.farmName)+'</span></footer></div>';
+ root.innerHTML='<aside class="sidebar"><a href="#home" class="brand" data-page="home"><span class="brand-mark">c.</span><span>clair<span class="brand-sub">FERME</span></span></a><div class="farm-name">'+icon("leaf")+'<span>'+esc(state.settings.farmName)+'</span></div><p class="nav-label">MON EXPLOITATION</p><nav aria-label="Navigation principale">'+nav.map(([id,label])=>'<button class="nav-item '+(page===id?"active":"")+'" data-page="'+id+'" '+(page===id?'aria-current="page"':"")+'>'+icon(id)+'<span>'+label+'</span></button>').join("")+'</nav><div class="sidebar-bottom"><span class="live-dot"></span> '+(mode==="demo"?"Exemple fictif":"Vos données, sur cet appareil")+'<p>Un cycle après l’autre.<br>Une ferme au clair.</p></div></aside><div class="workspace"><header class="topbar"><span class="top-label">Votre ferme, au clair.</span><label class="cycle-picker"><span class="sr-only">Cycle affiché</span>'+icon("cycles")+'<select id="cycle-picker" aria-label="Cycle affiché">'+state.cycles.map(x=>option(x.id,x.name+" · "+status(x),x.id===c.id)).join("")+'</select></label><span class="saved">'+icon("check")+' '+(lastSaved?"Enregistré":"Sauvegarde locale")+'</span></header>'+(mode==="demo"?'<div class="demo-banner"><strong>Mode exemple</strong> · Ces chiffres sont fictifs. '+btn("Passer à mes données","real","button text")+'</div>':"")+'<main id="main" tabindex="-1">'+({home:home,journal:journal,stock:stockPage,cycles:cyclesPage,settings:settingsPage}[page]||home)(c)+'</main><footer class="footer">Clair Ferme <span>Montants en FCFA · '+esc(state.settings.farmName)+'</span></footer></div>';
 }
 function welcome(){
  return '<main id="main" class="welcome"><div class="welcome-intro"><a class="brand" href="#"><span class="brand-mark">c.</span><span>clair<span class="brand-sub">FERME</span></span></a><p class="eyebrow">MOINS DE FLOU. PLUS DE VISIBILITÉ.</p><h1>Votre ferme.<br>Vos chiffres.<br><em>Au clair.</em></h1><p>Préparez votre cycle, notez vos dépenses et gardez le cap sur votre objectif.</p><div class="welcome-proof"><span>01 · Prévoir</span><span>02 · Suivre</span><span>03 · Ajuster</span></div></div><div class="welcome-card"><span class="step-tag">BIENVENUE CHEZ VOUS</span><h2>Commençons par votre ferme.</h2><p>Choisissez la durée de votre premier cycle, votre effectif et votre budget. Rien n’est imposé.</p><div class="feature-line">'+icon("cycles")+'<div><strong>Un budget par cycle</strong><span>45 jours, 60 jours… à vous de choisir.</span></div></div><div class="feature-line">'+icon("journal")+'<div><strong>Le réel, au fil des jours</strong><span>Achats, aliments, pertes et ventes.</span></div></div><div class="feature-line">'+icon("check")+'<div><strong>Des saisies conservées</strong><span>Sur cet appareil, avec export de sauvegarde.</span></div></div>'+btn("Configurer mon premier cycle "+icon("arrow"),"setup","button full")+'<div class="welcome-links">'+btn("Voir un exemple","demo","button text")+btn("Importer mes données","import","button text")+'</div><small>Les hypothèses du budget n’enregistrent aucun achat réel.</small></div></main>';
@@ -75,7 +80,7 @@ function budgetTable(c,m){
  rows.push('<tr><td>Ventes</td><td>'+money(c.targetSales)+'</td><td>'+money(m.revenue)+'</td><td>'+money(c.remainingSales)+'</td><td>'+money(m.forecastSales)+'</td></tr>');
  return table(["Poste","Départ","Réel","Reste prévu","Fin prévue"],rows)+'<div class="budget-result"><span>Écart de charges au budget initial</span><strong class="'+(m.forecastCost>m.budget?"text-danger":"text-green")+'">'+(m.forecastCost>m.budget?"+":"")+money(m.forecastCost-m.budget)+'</strong></div>';
 }
-function operations(c,limit=20000){
+function operations(c,limit=200){
  const costs=feedCosts(state).costs;
  const rows=[
  ...state.expenses.filter(x=>x.cycleId===c.id).map(x=>({...x,list:"expenses",type:"Dépense",title:x.label,amount:x.amount,balance:x.amount-x.paid})),
@@ -214,7 +219,7 @@ document.addEventListener("submit",e=>{
   else if(type==="sale")perform("sale",{...d,received:d.fullyReceived?d.quantity*d.unitPrice:d.received});
   else if(type==="revise")perform("revise",{...d,remaining:Object.fromEntries(KEYS.map(k=>[k,d["remaining_"+k]]))});
   else if(type==="import-confirm"){save(pendingImport);pendingImport=null;}
-  else if(type==="reset-corrupt"){localStorage.removeItem(STORE);state=blank();loadError=null;render();}
+  else if(type==="reset-corrupt"){localStorage.removeItem(STORE);savedRaw=null;state=blank();loadError=null;render();}
   else perform(type,d);
   closeDialog();if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
  }catch(err){const out=form.querySelector(".form-error");out.hidden=false;out.textContent=err.message;out.scrollIntoView({block:"nearest"});}
@@ -240,7 +245,7 @@ document.addEventListener("click",async e=>{
  if(a==="import"){$("#import-file").click();return;}
  if(a==="demo"||a==="real"){
   closeDialog();mode=a==="demo"?"demo":"real";loadError=null;
-  if(mode==="demo"){try{const raw=localStorage.getItem(DEMO);state=raw?validate(JSON.parse(raw)):demo();}catch{state=demo();}}
+  if(mode==="demo"){try{const raw=localStorage.getItem(DEMO);savedRaw=raw;state=raw?validate(JSON.parse(raw)):demo();}catch{state=demo();}}
   else load();
   page="home";render();return;
  }
@@ -264,7 +269,7 @@ $("#import-file").addEventListener("change",async e=>{
 });
 window.addEventListener("storage",e=>{
  if(e.key===(mode==="demo"?DEMO:STORE)){
-  try{if(e.newValue){state=validate(JSON.parse(e.newValue));closeDialog();render();toast("Données mises à jour depuis un autre onglet.");}}
+  try{if(e.newValue){state=validate(JSON.parse(e.newValue));savedRaw=e.newValue;closeDialog();render();toast("Données mises à jour depuis un autre onglet.");}}
   catch{toast("Une sauvegarde modifiée dans un autre onglet est invalide. Rechargez avant de continuer.");}
  }
 });

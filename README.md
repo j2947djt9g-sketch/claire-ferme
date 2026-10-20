@@ -24,5 +24,25 @@ JavaScript natif sans compilation. `node --test tests/domain.test.mjs`.
 Servir le dossier en HTTP (par exemple `python3 -m http.server 8080`) : les modules ES ne se lancent pas par double clic sur un fichier.
 GitHub Pages : branche main, dossier racine.
 
-## État
-Le moteur est enregistré dans un premier checkpoint. Interface et tests sont en cours dans les commits suivants.
+## Utilisation
+1. Ouvrir l’application et choisir « Configurer mon premier cycle ».
+2. Saisir durée, effectif, prix, mortalité prévue, aliments et autres charges.
+3. Enregistrer les mouvements réels dans Opérations et Aliments.
+4. Ajuster les prévisions restantes, puis préparer le cycle suivant.
+5. Exporter régulièrement une sauvegarde JSON dans Sauvegarde.
+
+Le mode exemple utilise un stockage séparé. Il n’écrase pas les données personnelles.
+
+## Vérification
+48 cas de calcul dans `tests/cases.mjs`. Les mêmes cas s’exécutent avec Node dans GitHub Actions.
+Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple et largeur des écrans.
+Pour les lancer : `npm install`, `npx playwright install chromium`, `npm run test:browser`.
+
+Résultats et limites dans [docs/verification.md](docs/verification.md).
+Les captures et traces des essais sont dans les artefacts GitHub Actions (7 jours).
+
+## Mise en ligne
+Le code est prêt pour GitHub Pages, sans compilation. Dans Settings → Pages :
+Source « Deploy from a branch », branche `main`, dossier `/(root)`, puis Save.
+L’URL prévue après activation est https://j2947djt9g-sketch.github.io/claire-ferme/
+La présence de ce lien ne signifie pas que l’hébergement est déjà activé.

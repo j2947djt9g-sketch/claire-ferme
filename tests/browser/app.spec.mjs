@@ -96,3 +96,23 @@ test("une nouvelle bande reprend les hypothèses sans recopier les opérations",
  const s=await data(page);expect(s.cycles).toHaveLength(2);expect(s.cycles[1].targetDays).toBe(60);
  expect(s.expenses).toHaveLength(0);expect(s.cycles[1].params.chickPrice).toBe(500);
 });
+
+test("un échec de sauvegarde garde le formulaire et les données précédentes",async({page})=>{
+ await setup(page);
+ await page.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException("quota","QuotaExceededError");};});
+ await page.getByRole("button",{name:"Dépense",exact:true}).click();const d=D(page);
+ await d.getByLabel("Libellé",{exact:true}).fill("Saisie non sauvée");
+ await d.getByLabel("Montant total (FCFA)",{exact:true}).fill("1000");
+ await d.getByRole("button",{name:"Enregistrer",exact:true}).click();
+ await expect(d.locator(".form-error")).toContainText("La sauvegarde sur cet appareil a échoué");
+ await expect(d).toBeVisible();expect((await data(page)).expenses).toHaveLength(0);
+});
+test("une sauvegarde illisible est conservée et peut être remplacée par un import valide",async({page})=>{
+ await setup(page);const valid=await data(page);
+ await page.evaluate(()=>localStorage.setItem("clair.ferme.v2","invalide"));await page.reload();
+ await expect(page.getByRole("heading",{name:"Retrouvons vos données"})).toBeVisible();
+ await page.locator("#import-file").setInputFiles({name:"restauration.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(valid))});
+ await D(page).getByRole("button",{name:"Remplacer mes données",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Chaque cycle compte."})).toBeVisible();
+ expect((await data(page)).cycles[0].name).toBe("Bande test");
+});
