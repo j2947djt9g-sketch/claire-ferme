@@ -171,3 +171,14 @@ test("les données et l’accueil se retrouvent hors connexion après la premiè
  expect((await data(page)).losses).toHaveLength(1);
  await context.setOffline(false);
 });
+
+test("les quatre saisies courantes restent accessibles dès l’ouverture sur téléphone",async({page})=>{
+ await setup(page);
+ await page.setViewportSize({width:390,height:664});
+ const dock=await page.getByRole("navigation",{name:"Navigation principale"}).boundingBox();
+ for(const action of ["Dépense","Aliments consommés","Vente","Perte"]){
+  const box=await page.getByRole("button",{name:action,exact:true}).boundingBox();
+  expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThan(dock.y);
+ }
+ await expect(page.getByRole("button",{name:"Voir le cycle sélectionné",exact:true})).toContainText("/ 60");
+});

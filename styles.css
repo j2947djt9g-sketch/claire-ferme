@@ -19,3 +19,17 @@ dialog{width:100%;max-width:100%;max-height:94dvh;margin:auto 0 0;border:1px sol
 
 /* Les actions d’en-tête restent dans leur carte sur les téléphones étroits. */
 .card-head{flex-wrap:wrap}.card-head>div{min-width:0;max-width:100%}.card-head>.actions{max-width:100%;min-width:0}.card-head h2{overflow-wrap:anywhere}.card-head .button{white-space:normal;max-width:100%}
+
+/* Premier écran du téléphone : solde, Pia et gestes du quotidien. */
+.mobile-heading>div{min-width:0}.mobile-heading .eyebrow{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.today-pill{border:1px solid var(--line);font-weight:550;flex-shrink:0;min-height:34px}
+.mobile-caption,.demo-short{display:none}
+@media(max-width:519px){
+ .pia-note{display:none}.desktop-caption{display:none}.mobile-caption{display:block;background:none;border:0;padding:0;text-align:left;font-family:var(--font);color:#e1efda;font-size:10px;line-height:1.5;min-height:40px;max-width:190px}.mobile-caption .icon{width:11px;height:11px;margin-left:2px;vertical-align:-2px}
+ .balance-section{padding:17px 19px 18px}.balance-readout{grid-template-columns:minmax(0,1fr) 94px;min-height:117px}.pia.hero{height:119px;width:97px;transform:translateY(3px)}.balance{font-size:clamp(32px,9.5vw,41px);margin:8px 0}.balance>span{margin-top:7px;font-size:9px}.balance-summary{margin-top:12px}.balance-summary>button{padding:8px 9px}.balance-summary strong{font-size:14px;margin-top:2px}.balance-summary>button>span:nth-child(2){font-size:9px}.scope-pill{font-size:7px}
+ .quick-actions{margin:16px 0 20px;gap:7px}.quick-action{font-size:9px;padding:2px}.quick-action>span{width:46px;height:46px;border-radius:16px}.quick-action strong{max-width:75px}.quick-action .icon{width:21px;height:21px}
+ .demo-long{display:none}.demo-short{display:inline}.demo-banner{padding:5px 12px;margin-bottom:11px;min-height:36px}.demo-banner .button{font-size:10px;padding:3px 0;min-height:26px}.demo-banner>span{font-size:9px}.mobile-heading{margin:5px 0 18px}.mobile-heading .eyebrow{font-size:8px;letter-spacing:.06em;margin-bottom:6px}.mobile-heading h1{font-size:24px}.today-pill{font-size:10px;padding:7px 9px}
+ .welcome-card .feature-line{display:none}
+}
+@media(max-width:359px){
+ .balance-section{padding:15px 16px}.balance-readout{grid-template-columns:minmax(0,1fr) 76px}.pia.hero{width:83px;height:109px}.balance{font-size:32px}.mobile-caption{font-size:9px;max-width:165px}.balance-summary strong{font-size:12px}.balance-summary>button{padding:8px 6px;gap:5px}.balance-summary>button>span:nth-child(2){font-size:8px}.mobile-heading h1{font-size:21px}.mobile-heading .eyebrow{font-size:7px}.today-pill{font-size:9px;padding:6px 8px}.quick-action>span{width:43px;height:43px}.quick-actions{gap:3px}.quick-action{font-size:8px}
+}
