@@ -1,0 +1,33 @@
+name: Vérifications Clair Ferme
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Vérifier les calculs
+        run: npm test
+      - name: Installer les outils de test
+        run: npm install --no-package-lock --ignore-scripts
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Vérifier les parcours sur ordinateur et téléphone
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: verification-et-captures
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
