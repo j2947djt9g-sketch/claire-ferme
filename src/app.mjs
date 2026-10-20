@@ -5,7 +5,8 @@ const qty=n=>new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2}).format(n);
 const niceDate=d=>new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00"));
 const STORE="clair.ferme.v2",DEMO="clair.ferme.demo.v2";
 let theme="dark";try{theme=localStorage.getItem("clair.ferme.theme")==="light"?"light":"dark";}catch{}
-document.documentElement.dataset.theme=theme;
+function applyTheme(){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",theme==="dark"?"#091511":"#f3f6f1");}
+applyTheme();
 let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer,savedRaw=null;
 const icons={
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
@@ -264,7 +265,7 @@ document.addEventListener("submit",e=>{
   else if(type==="import-confirm"){save(pendingImport);pendingImport=null;}
   else if(type==="reset-corrupt"){localStorage.removeItem(STORE);savedRaw=null;state=blank();loadError=null;render();}
   else perform(type,d);
-  closeDialog();if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
+  closeDialog();if(["setup","cycle","import-confirm"].includes(type))window.scrollTo({top:0,left:0});if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
  }catch(err){const out=form.querySelector(".form-error");out.hidden=false;out.textContent=err.message;out.scrollIntoView({block:"nearest"});}
 });
 document.addEventListener("input",e=>{if(e.target.closest("#dialog"))updatePlan();});
@@ -279,10 +280,10 @@ document.addEventListener("click",async e=>{
  const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action;
  try{
  if(a==="install-app"){dialog("Clair Ferme sur votre téléphone",'<div class="install-guide">'+mascot("install-pia")+'<h3>Un geste pour retrouver votre ferme.</h3><p>Sur iPhone, ouvrez ce site dans Safari, touchez <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.</p><p>Sur Android, ouvrez le menu de Chrome puis <strong>Ajouter à l’écran d’accueil</strong> ou <strong>Installer l’application</strong>.</p><p class="helper">Après la première ouverture complète, l’application peut aussi se rouvrir sans connexion. Vos saisies restent enregistrées sur cet appareil.</p></div>');return;}
- if(a==="theme"){theme=theme==="dark"?"light":"dark";document.documentElement.dataset.theme=theme;try{localStorage.setItem("clair.ferme.theme",theme);}catch{}render();return;}
- if(a==="go-settings"){page="settings";render();return;}
+ if(a==="theme"){theme=theme==="dark"?"light":"dark";applyTheme();try{localStorage.setItem("clair.ferme.theme",theme);}catch{}render();return;}
+ if(a==="go-settings"){page="settings";render();window.scrollTo({top:0,left:0});return;}
  if(a==="dismiss"){closeDialog();return;}
- if(a==="go-journal"){page="journal";render();return;}
+ if(a==="go-journal"){page="journal";render();window.scrollTo({top:0,left:0});return;}
  if(a==="select"){perform("select",{id:b.dataset.id});return;}
  if(a==="backup"){download(JSON.stringify(state,null,2),"clair-ferme-"+today()+".json","application/json");return;}
  if(a==="csv"){download(csv(state),"clair-ferme-journal-"+today()+".csv","text/csv;charset=utf-8");return;}
@@ -293,7 +294,7 @@ document.addEventListener("click",async e=>{
   closeDialog();mode=a==="demo"?"demo":"real";loadError=null;
   if(mode==="demo"){try{const raw=localStorage.getItem(DEMO);savedRaw=raw;state=raw?validate(JSON.parse(raw)):demo();}catch{state=demo();}}
   else load();
-  page="home";render();return;
+  page="home";render();window.scrollTo({top:0,left:0});return;
  }
  actionForm(a,b.dataset);fixNumberAttrs();
  }catch(err){toast(err.message);}

@@ -74,7 +74,7 @@ test("export JSON puis import contrôlé conserve le cycle",async({page})=>{
 test("la démonstration reste séparée des données personnelles",async({page})=>{
  await setup(page);const before=await data(page);await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Explorer un exemple fictif",exact:true}).click();
- await expect(page.locator(".demo-banner")).toBeVisible();expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
+ await expect(page.locator(".demo-banner")).toBeVisible();expect(await page.evaluate(()=>scrollY)).toBe(0);expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
  await page.getByRole("button",{name:"Passer à mes données",exact:true}).click();
  await expect(page.locator(".demo-banner")).toHaveCount(0);expect((await data(page)).settings.farmName).toBe("Ferme Test");
 });
@@ -89,7 +89,8 @@ test("les pages et formulaires restent dans la largeur de l’écran",async({pag
  await expect(page.locator(".pia.hero")).toBeVisible();
  await page.waitForFunction(()=>{const img=document.querySelector(".pia.hero");return img?.complete&&img.naturalWidth>0;});
  await page.screenshot({path:testInfo.outputPath("dashboard.png"),fullPage:true});
- const jpg=await page.screenshot({type:"jpeg",quality:70,fullPage:false});
+ await page.evaluate(()=>window.scrollTo({top:0,left:0}));
+ const jpg=await page.screenshot({type:"jpeg",quality:70,fullPage:false,scale:"css"});
  const encoded=jpg.toString("base64");
  for(let i=0;i<encoded.length;i+=6000)console.log("CF_PREVIEW_"+testInfo.project.name+"_"+Math.floor(i/6000)+":"+encoded.slice(i,i+6000));
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
@@ -131,6 +132,7 @@ test("la mascotte et le thème suivent les vrais chiffres sans modifier les donn
  const before=JSON.stringify(await data(page));
  await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
  expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#f3f6f1");
  expect(JSON.stringify(await data(page))).toBe(before);
  await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
@@ -146,7 +148,9 @@ test("la navigation reste disponible sur les petits téléphones",async({page})=
   await page.setViewportSize({width,height:844});
   for(const name of ["Vue d’ensemble","Aliments","Cycles et budgets","Sauvegarde"]){
    await nav(page,name);
-   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+   const layout=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:Array.from(document.querySelectorAll("body *")).filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,12).map(el=>({tag:el.tagName,cls:el.className,right:el.getBoundingClientRect().right,text:el.textContent.slice(0,65)}))}));
+   if(layout.scroll>layout.width+1)console.log("LAYOUT_DIAGNOSTIC",JSON.stringify({screen:name,...layout}));
+   expect(layout.scroll<=layout.width+1).toBe(true);
   }
   const navBox=await page.getByRole("navigation",{name:"Navigation principale"}).boundingBox();
   expect(navBox.y+navBox.height).toBeLessThanOrEqual(844);
