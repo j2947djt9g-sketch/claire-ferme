@@ -1,6 +1,11 @@
 # Clair Ferme
 
-Application indépendante pour suivre des bandes de poulets, leurs dépenses et leur budget. FCFA. Aucun Firebase, aucun lien avec le Clair personnel.
+Application mobile web pour suivre des bandes de poulets, leurs dépenses et leur budget, en FCFA. Elle reprend les codes visuels de Clair et possède son propre code et son propre espace de données. Aucun Firebase.
+
+## Identité
+Version 0.2.2 : forêt, menthe et jaune poussin ; carte de trésorerie en dégradé, surfaces translucides, typographie système, navigation au pouce et formulaires en feuilles sur téléphone. **Pia**, petite poussine en salopette verte, accompagne les chiffres avec des messages issus des données réelles.
+[Guide de l’identité visuelle](docs/identite-visuelle.md).
+Les thèmes clair et sombre sont mémorisés séparément des données financières.
 
 ## Priorité produit
 Configurer la durée et les hypothèses du cycle, enregistrer le réel, comprendre trésorerie et résultat, puis préparer la bande suivante. Les références Excel fournies sont indicatives ; elles ne deviennent pas les données de la ferme. Les montants de démonstration sont fictifs et explicitement signalés.
@@ -35,16 +40,17 @@ Le mode exemple utilise un stockage séparé. Il n’écrase pas les données pe
 
 ## Vérification
 48 cas de calcul dans `tests/cases.mjs`. Les mêmes cas s’exécutent avec Node dans GitHub Actions.
-Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple et largeur des écrans.
+Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple largeur des écrans, thèmes, messages de Pia, accès aux actions dès l’ouverture et saisie hors connexion.
 Pour les lancer : `npm install`, `npx playwright install chromium`, `npm run test:browser`.
 
-Dernier passage vérifié : **48 tests de calcul et 18 essais navigateur réussis** (Chromium ordinateur et téléphone).
-[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883).
+Dernier passage vérifié : **48 tests de calcul et 26 essais navigateur réussis** (Chromium ordinateur et téléphone).
+[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012).
 Résultats et limites dans [docs/verification.md](docs/verification.md).
 Les captures et traces des essais sont dans les artefacts GitHub Actions (7 jours).
 
-## Mise en ligne
-Le code est prêt pour GitHub Pages, sans compilation. Dans Settings → Pages :
-Source « Deploy from a branch », branche `main`, dossier `/(root)`, puis Save.
-L’URL prévue après activation est https://j2947djt9g-sketch.github.io/claire-ferme/
-La présence de ce lien ne signifie pas que l’hébergement est déjà activé.
+## Ouvrir l’application
+https://j2947djt9g-sketch.github.io/claire-ferme/
+
+La publication GitHub Pages est activée sur la branche main. Les fichiers sont servis sans compilation.
+Sur iPhone : ouvrir dans Safari → Partager → Sur l’écran d’accueil. Sur Android : menu du navigateur → Ajouter à l’écran d’accueil / Installer.
+Après un premier chargement complet, l’application se rouvre hors connexion. Les exports JSON restent indispensables pour conserver une copie séparée des données du navigateur.

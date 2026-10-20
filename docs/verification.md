@@ -1,37 +1,46 @@
-# Vérification de Clair Ferme
+# Vérification · Clair Ferme 0.2.2
 
-## Périmètre livré
-Configuration initiale (durée libre entre 1 et 730 jours, effectif, prix, mortalité prévue, budget et objectif), cycles multiples, dépenses, achats d’aliments, consommation par cycle, ventes et encaissements partiels, pertes, apports, paiements des reliquats, ajustement du budget restant, préparation du cycle suivant, comparaison des résultats, export CSV et sauvegarde/import JSON.
+Version publiée sur https://j2947djt9g-sketch.github.io/claire-ferme/
 
-Le stockage est local au navigateur. Une sauvegarde JSON reste nécessaire pour conserver une copie extérieure ou changer d’appareil. Il n’y a pas de compte ni de synchronisation cloud.
+## Résultat
+**48 tests de calcul et 26 essais navigateur réussis.**
 
-## Contrôles exécutés
-- 48 scénarios de calcul réussis dans le moteur JavaScript V8.
-- Les mêmes 48 tests passent dans Node 24 sur GitHub Actions (premier workflow).
-- Les cinq écrans produisent un rendu HTML sans exception, NaN ou valeur undefined avec les données d’exemple.
-- Vérifications de syntaxe JavaScript réussies.
+Code testé : `ab3cace9cc8eac737bdb5fabdd62a2886f50591b`.
+Workflow : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012
+Rapport et captures : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012/artifacts/12291719727
 
-## Parcours dans un navigateur
-GitHub Actions exécute Playwright dans Chromium, sur une largeur d’ordinateur et un profil de téléphone.
-Premier passage : 12 parcours réussis sur 14. Le libellé accessible du sélecteur de poste empêchait la sélection par son nom exact ; correction du nom accessible, puis nouvelle exécution.
-Deuxième passage : **18 essais réussis sur 18**, soit 9 parcours sur ordinateur et 9 sur téléphone. Il couvre aussi l’échec de sauvegarde et la restauration d’un fichier illisible.
+Le déploiement GitHub Pages du même commit est réussi :
+https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484206154
 
-Code vérifié : `b4b7032e04d6606a9ad2aa67ecf5a38e435af499`.
-Résultat : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883
-Captures et rapport : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39481059883/artifacts/12291696360
+## Comportements vérifiés
+- Configuration d’un cycle de 60 jours, hypothèses distinctes des opérations.
+- Conservation des saisies après rechargement.
+- Achat d’aliments, consommation par cycle et conservation du coût du lot.
+- Ventes et paiements partiels, créances, dettes, trésorerie distincte du résultat.
+- Correction d’une opération et annulation de ses effets.
+- Sauvegarde JSON, import contrôlé et restauration d’une copie illisible.
+- Échec de stockage : le formulaire et les données antérieures sont conservés.
+- Séparation du mode exemple et des données personnelles.
+- Nouveau cycle reprenant les hypothèses sans recopier les mouvements.
+- Thèmes clair et sombre mémorisés sans modifier les données financières.
+- Présence et chargement de Pia ; message défavorable quand la trésorerie est négative.
+- Pages et formulaires contenus dans la largeur ; navigation utilisable à 320, 390 et 430 pixels.
+- Quatre actions courantes accessibles dans le premier écran de 390 × 664 pixels.
+- Réouverture et saisie d’une perte hors connexion après le premier chargement complet.
 
-## Points de calcul essentiels
-Les hypothèses sont distinctes des opérations réelles. Les prévisions de poulets vendables sont arrondies à l’entier inférieur. Les montants sont des FCFA entiers.
-Le coût du stock est distribué par arrondi cumulatif pour conserver le montant total du lot.
-Le budget de départ est conservé lors des ajustements. Une charge prévue réduit le reste à engager ; une charge imprévue s’ajoute.
-Le résultat à date d’un cycle ouvert est provisoire. Les frais fixes sont saisis par cycle, sans multiplication automatique par un nombre théorique de cycles annuels.
+Les essais sont exécutés dans Chromium, avec un profil ordinateur et un profil téléphone. Ils ne remplacent pas une vérification matérielle dans Safari sur iPhone.
+Les captures de l’accueil mobile et bureau ont également servi à la revue visuelle : hauteur de la carte, accès aux actions, position de défilement et débordement des en-têtes ont été corrigés.
 
-## Limites
-Pas de banque connectée, de stock de poussins partagé, d’immobilisations/amortissements ou de bilan comptable réglementaire.
-Les règlements partiels modifient le montant cumulé payé/encaissé ; ils n’ont pas encore un journal d’échéanciers datés distinct.
-Les charges d’aliments doivent passer par un achat de stock puis une consommation, pour éviter un double comptage.
-Une correction consiste à supprimer puis ressaisir une opération, avec confirmation. Les cycles clôturés sont figés.
-GitHub Pages n’était pas activé lors de la préparation de cette version. Le connecteur ne permet pas de modifier ce réglage d’administration.
+## Identité
+[Guide visuel](identite-visuelle.md). Le style reprend la famille Clair et l’adapte à la ferme : typographie système, cartes arrondies, dégradé de trésorerie, surfaces translucides, vert forêt et menthe, mascotte jaune.
+Le cycle sélectionné et son jour sont visibles dès l’en-tête. Sur téléphone, le message de Pia est intégré à la carte financière et les formulaires s’ouvrent depuis le bas.
 
-## Prochain point
-Reprise de vérification programmée le 24 octobre 2026. Vérifier la publication, lire les résultats des tests, corriger les défauts observés et rester centré sur les parcours simples et utiles.
+## Données et limites
+Le moteur et les clés de sauvegarde financière sont conservés. La refonte ne migre ni ne réinitialise les saisies existantes.
+Stockage dans le navigateur ; export JSON nécessaire pour une copie séparée ou un transfert. Pas de synchronisation cloud ni de compte dans cette version.
+Les règlements modifient le montant cumulé payé/encaissé ; aucun journal de paiements datés distinct.
+Les investissements, amortissements et bilans réglementaires ne sont pas inclus. Les frais fixes sont affectés au cycle, sans annualisation automatique.
+Une correction passe par une suppression confirmée puis une nouvelle saisie. Les cycles clôturés restent figés.
+
+## Reprise prévue
+Un point de vérification est programmé pour le 24 octobre 2026. Conserver l’identité et la priorité au téléphone lors des corrections suivantes.
