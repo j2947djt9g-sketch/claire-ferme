@@ -14,7 +14,7 @@ async function setup(page){
  await d.getByLabel("Nombre de sacs",{exact:true}).fill("10");
  await d.getByLabel("Prix du sac (FCFA)",{exact:true}).fill("20000");
  await d.getByRole("button",{name:"Créer mon cycle",exact:true}).click();
- await expect(page.getByRole("heading",{name:"Chaque cycle compte."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
 }
 async function data(page){return page.evaluate(()=>JSON.parse(localStorage.getItem("clair.ferme.v2")));}
 async function nav(page,name){await page.getByRole("button",{name,exact:true}).click();}
@@ -23,7 +23,7 @@ test("premier lancement, durée personnalisée et persistance après rechargemen
  await setup(page);
  let s=await data(page);expect(s.cycles[0].targetDays).toBe(60);expect(s.expenses).toHaveLength(0);
  expect(s.settings.openingCash).toBe(500000);
- await page.reload();await expect(page.getByRole("heading",{name:"Chaque cycle compte."})).toBeVisible();
+ await page.reload();await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
  expect((await data(page)).cycles[0].name).toBe("Bande test");expect(errors).toEqual([]);
 });
 test("achat, consommation, vente partielle et conservation des soldes",async({page})=>{
@@ -84,7 +84,14 @@ test("les pages et formulaires restent dans la largeur de l’écran",async({pag
   await nav(page,name);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
  }
  await nav(page,"Vue d’ensemble");
+ await nav(page,"Sauvegarde");
+ await page.getByRole("button",{name:"Explorer un exemple fictif",exact:true}).click();
+ await expect(page.locator(".pia.hero")).toBeVisible();
+ await page.waitForFunction(()=>{const img=document.querySelector(".pia.hero");return img?.complete&&img.naturalWidth>0;});
  await page.screenshot({path:testInfo.outputPath("dashboard.png"),fullPage:true});
+ const jpg=await page.screenshot({type:"jpeg",quality:70,fullPage:false});
+ const encoded=jpg.toString("base64");
+ for(let i=0;i<encoded.length;i+=6000)console.log("CF_PREVIEW_"+testInfo.project.name+"_"+Math.floor(i/6000)+":"+encoded.slice(i,i+6000));
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
  expect(await D(page).evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
  await D(page).getByRole("button",{name:"Fermer",exact:true}).click();
@@ -113,6 +120,50 @@ test("une sauvegarde illisible est conservée et peut être remplacée par un im
  await expect(page.getByRole("heading",{name:"Retrouvons vos données"})).toBeVisible();
  await page.locator("#import-file").setInputFiles({name:"restauration.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(valid))});
  await D(page).getByRole("button",{name:"Remplacer mes données",exact:true}).click();
- await expect(page.getByRole("heading",{name:"Chaque cycle compte."})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
  expect((await data(page)).cycles[0].name).toBe("Bande test");
+});
+
+test("la mascotte et le thème suivent les vrais chiffres sans modifier les données",async({page})=>{
+ await setup(page);
+ await expect(page.locator(".pia.hero")).toBeVisible();
+ await page.waitForFunction(()=>document.querySelector(".pia.hero")?.naturalWidth>0);
+ const before=JSON.stringify(await data(page));
+ await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
+ expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ expect(JSON.stringify(await data(page))).toBe(before);
+ await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ await page.getByRole("button",{name:"Dépense",exact:true}).click();
+ await D(page).getByLabel("Libellé",{exact:true}).fill("Dépense importante");
+ await D(page).getByLabel("Montant total (FCFA)",{exact:true}).fill("600000");
+ await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
+ await expect(page.locator(".pia-note")).toHaveAttribute("data-mood","danger");
+ await expect(page.locator(".pia-note")).toContainText("Les paiements dépassent la trésorerie");
+});
+test("la navigation reste disponible sur les petits téléphones",async({page})=>{
+ await setup(page);
+ for(const width of [320,390,430]){
+  await page.setViewportSize({width,height:844});
+  for(const name of ["Vue d’ensemble","Aliments","Cycles et budgets","Sauvegarde"]){
+   await nav(page,name);
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  }
+  const navBox=await page.getByRole("navigation",{name:"Navigation principale"}).boundingBox();
+  expect(navBox.y+navBox.height).toBeLessThanOrEqual(844);
+ }
+});
+test("les données et l’accueil se retrouvent hors connexion après la première ouverture",async({page,context})=>{
+ await setup(page);
+ await page.evaluate(()=>navigator.serviceWorker.ready);
+ await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+ const before=await data(page);
+ await context.setOffline(true);
+ await page.reload();
+ await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
+ expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
+ await page.getByRole("button",{name:"Perte",exact:true}).click();
+ await D(page).getByLabel("Nombre de poulets perdus",{exact:true}).fill("1");
+ await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
+ expect((await data(page)).losses).toHaveLength(1);
+ await context.setOffline(false);
 });

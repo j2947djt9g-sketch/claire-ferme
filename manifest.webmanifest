@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Clair Ferme",
+  "short_name": "Clair Ferme",
+  "description": "Votre argent, vos poulets, votre cap. Avec Pia, votre ferme au clair.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#091511",
+  "theme_color": "#091511",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
