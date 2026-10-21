@@ -191,12 +191,15 @@ async function preview(page,testInfo,key){
  for(let i=0;i<encoded.length;i+=6000)console.log("CF_"+key+"_"+Math.floor(i/6000)+":"+encoded.slice(i,i+6000));
 }
 test("une ouverture illustrée accompagne le chargement réel puis libère l’application",async({page},testInfo)=>{
- await page.route("**/src/app.mjs*",async route=>{await new Promise(resolve=>setTimeout(resolve,1100));await route.continue();});
- await page.goto("/",{waitUntil:"commit"});
+ let release;const gate=new Promise(resolve=>{release=resolve;});
+ await page.route("**/src/app.mjs*",async route=>{await gate;await route.continue();});
  const splash=page.getByRole("status",{name:"Ouverture de Clair Ferme",exact:true});
- await expect(splash).toBeVisible();
- await expect(page.locator("#app")).toHaveAttribute("inert","");
- if(testInfo.project.name==="mobile"){await page.waitForTimeout(650);await preview(page,testInfo,"LAUNCH");}
+ try{
+  await page.goto("/",{waitUntil:"commit"});
+  await expect(splash).toBeVisible();
+  await expect(page.locator("#app")).toHaveAttribute("inert","");
+  if(testInfo.project.name==="mobile"){await page.waitForTimeout(650);await preview(page,testInfo,"LAUNCH");}
+ }finally{release();}
  await expect(splash).toBeHidden({timeout:8000});
  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
  await expect(page.getByRole("button",{name:/Configurer mon premier cycle/})).toBeVisible();
@@ -235,11 +238,12 @@ test("les saisies existantes restent intactes avec le nouveau thème par défaut
  expect(await data(page)).toEqual(before);
 });
 test("l’accueil illustré et le premier bouton restent utilisables sur les formats mobiles",async({page},testInfo)=>{
- for(const [width,height]of [[390,844],[768,1024],[1024,768],[844,390]]){
+ for(const [width,height]of [[320,664],[390,664],[390,844],[768,1024],[1024,768],[844,390]]){
   await page.setViewportSize({width,height});await page.goto("/");
   await expect(page.locator("#launch-screen")).toBeHidden();
   await expect(page.locator(".welcome-world .farm-scene")).toBeVisible();
   const button=page.getByRole("button",{name:/Configurer mon premier cycle/});await expect(button).toBeVisible();
+  const box=await button.boundingBox();expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(height);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
  if(testInfo.project.name==="mobile"){await page.setViewportSize({width:390,height:844});await page.goto("/");await expect(page.locator("#launch-screen")).toBeHidden();await preview(page,testInfo,"WELCOME");}
