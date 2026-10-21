@@ -125,16 +125,18 @@ test("une sauvegarde illisible est conservée et peut être remplacée par un im
  expect((await data(page)).cycles[0].name).toBe("Bande test");
 });
 
-test("la mascotte et le thème suivent les vrais chiffres sans modifier les données",async({page})=>{
+test("la mascotte et les thèmes suivent les vrais chiffres sans modifier les données",async({page})=>{
  await setup(page);
  await expect(page.locator(".pia.hero")).toBeVisible();
  await page.waitForFunction(()=>document.querySelector(".pia.hero")?.naturalWidth>0);
  const before=JSON.stringify(await data(page));
- await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
  expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
- await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#f3f6f1");
+ await page.getByRole("button",{name:"Passer au thème sombre",exact:true}).click();
+ expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
  expect(JSON.stringify(await data(page))).toBe(before);
- await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
+ await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
+ await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#fbf9f2");
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
  await D(page).getByLabel("Libellé",{exact:true}).fill("Dépense importante");
  await D(page).getByLabel("Montant total (FCFA)",{exact:true}).fill("600000");
@@ -181,4 +183,64 @@ test("les quatre saisies courantes restent accessibles dès l’ouverture sur t�
   expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThan(dock.y);
  }
  await expect(page.getByRole("button",{name:"Voir le cycle sélectionné",exact:true})).toContainText("/ 60");
+});
+
+async function preview(page,testInfo,key){
+ await page.screenshot({path:testInfo.outputPath(key+".png"),fullPage:true});
+ const encoded=(await page.screenshot({type:"jpeg",quality:65,fullPage:false,scale:"css"})).toString("base64");
+ for(let i=0;i<encoded.length;i+=6000)console.log("CF_"+key+"_"+Math.floor(i/6000)+":"+encoded.slice(i,i+6000));
+}
+test("une ouverture illustrée accompagne le chargement réel puis libère l’application",async({page},testInfo)=>{
+ await page.route("**/src/app.mjs*",async route=>{await new Promise(resolve=>setTimeout(resolve,1100));await route.continue();});
+ await page.goto("/",{waitUntil:"commit"});
+ const splash=page.getByRole("status",{name:"Ouverture de Clair Ferme",exact:true});
+ await expect(splash).toBeVisible();
+ await expect(page.locator("#app")).toHaveAttribute("inert","");
+ if(testInfo.project.name==="mobile"){await page.waitForTimeout(650);await preview(page,testInfo,"LAUNCH");}
+ await expect(splash).toBeHidden({timeout:8000});
+ await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+ await expect(page.getByRole("button",{name:/Configurer mon premier cycle/})).toBeVisible();
+});
+test("l’animation peut être revue et respecte la réduction des mouvements",async({page})=>{
+ await page.emulateMedia({reducedMotion:"reduce"});await setup(page);await nav(page,"Sauvegarde");
+ await page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true}).click();
+ await expect(page.locator("#launch-screen")).toBeVisible();
+ expect(await page.locator(".sprout-stem").evaluate(el=>getComputedStyle(el).animationName)).toBe("none");
+ await expect(page.locator("#launch-screen")).toBeHidden({timeout:4000});
+ await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+});
+test("tablettes et téléphone en paysage gardent une navigation et des formulaires utilisables",async({page},testInfo)=>{
+ test.setTimeout(60000);await setup(page);
+ for(const [width,height]of [[768,1024],[1024,768],[820,1180],[1180,820],[844,390]]){
+  await page.setViewportSize({width,height});
+  for(const screen of ["Vue d’ensemble","Opérations","Aliments","Cycles et budgets","Sauvegarde"]){
+   await nav(page,screen);
+   const layout=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:Array.from(document.querySelectorAll("body *")).filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,10).map(el=>({tag:el.tagName,cls:el.className,right:el.getBoundingClientRect().right}))}));
+   if(layout.scroll>layout.width+1)console.log("TABLET_LAYOUT",JSON.stringify({screen,width,height,...layout}));
+   expect(layout.scroll).toBeLessThanOrEqual(layout.width+1);
+  }
+  await nav(page,"Vue d’ensemble");await page.getByRole("button",{name:"Dépense",exact:true}).click();
+  const box=await D(page).boundingBox();expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width+1);
+  expect(await D(page).evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  expect(await D(page).getByLabel("Libellé",{exact:true}).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+  await D(page).getByRole("button",{name:"Fermer",exact:true}).click();
+ }
+ if(testInfo.project.name==="desktop"){await page.setViewportSize({width:768,height:1024});await nav(page,"Vue d’ensemble");await preview(page,testInfo,"TABLET");}
+});
+test("les saisies existantes restent intactes avec le nouveau thème par défaut",async({page})=>{
+ await setup(page);const before=await data(page);
+ await page.evaluate(()=>{localStorage.setItem("clair.ferme.theme","dark");localStorage.removeItem("clair.ferme.appearance.v3");});
+ await page.reload();await expect(page.locator("#launch-screen")).toBeHidden();
+ expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ expect(await data(page)).toEqual(before);
+});
+test("l’accueil illustré et le premier bouton restent utilisables sur les formats mobiles",async({page},testInfo)=>{
+ for(const [width,height]of [[390,844],[768,1024],[1024,768],[844,390]]){
+  await page.setViewportSize({width,height});await page.goto("/");
+  await expect(page.locator("#launch-screen")).toBeHidden();
+  await expect(page.locator(".welcome-world .farm-scene")).toBeVisible();
+  const button=page.getByRole("button",{name:/Configurer mon premier cycle/});await expect(button).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ if(testInfo.project.name==="mobile"){await page.setViewportSize({width:390,height:844});await page.goto("/");await expect(page.locator("#launch-screen")).toBeHidden();await preview(page,testInfo,"WELCOME");}
 });
