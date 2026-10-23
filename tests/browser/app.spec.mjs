@@ -141,7 +141,7 @@ test("la mascotte et les thèmes suivent les vrais chiffres sans modifier les do
  expect(JSON.stringify(await data(page))).toBe(before);
  await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
  await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
- await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#f7f7f8");
+ await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#fbf9f2");
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
  await D(page).getByLabel("Libellé",{exact:true}).fill("Dépense importante");
  await D(page).getByLabel("Montant total (FCFA)",{exact:true}).fill("600000");
@@ -226,7 +226,7 @@ test("l’animation peut être revue et respecte la réduction des mouvements",a
  await page.emulateMedia({reducedMotion:"reduce"});await setup(page);await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true}).click();
  await expect(page.locator("#launch-screen")).toBeVisible();
- expect(await page.locator(".launch-curtain").evaluate(el=>getComputedStyle(el).transitionDuration)).toBe("0s");
+ expect(await page.locator(".launch-curtain").evaluate(el=>getComputedStyle(el).transitionDuration.split(",").every(value=>parseFloat(value)===0))).toBe(true);
  await expect(page.locator("#launch-screen")).toBeHidden({timeout:4000});
  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
 });
