@@ -1,46 +1,44 @@
-# Vérification · Clair Ferme 0.2.2
+# Vérification · Clair Ferme 0.3.0
 
-Version publiée sur https://j2947djt9g-sketch.github.io/claire-ferme/
+## Passage du 23 octobre 2026
 
-## Résultat
-**48 tests de calcul et 26 essais navigateur réussis.**
+48 tests de calcul et 54 parcours navigateur réussis.
+Code testé : `e3d8cf5d8219b8a4da803a248da26f37116a4b51`.
+Résultats : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/40012283442
 
-Code testé : `ab3cace9cc8eac737bdb5fabdd62a2886f50591b`.
-Workflow : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012
-Rapport et captures : https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012/artifacts/12291719727
+Les 18 parcours sont exécutés dans trois profils : Chromium ordinateur, Chromium au format iPhone 13 et WebKit au format iPhone 13. Ils incluent les téléphones de 320 à 430 pixels, les tablettes en portrait et paysage et le téléphone en paysage. Ces essais ne remplacent pas une vérification matérielle sur un véritable iPhone ou iPad.
 
-Le déploiement GitHub Pages du même commit est réussi :
-https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484206154
+## Couverture
 
-## Comportements vérifiés
-- Configuration d’un cycle de 60 jours, hypothèses distinctes des opérations.
+- Configuration du cycle, durée personnalisée et prévisions distinctes du réel.
 - Conservation des saisies après rechargement.
-- Achat d’aliments, consommation par cycle et conservation du coût du lot.
-- Ventes et paiements partiels, créances, dettes, trésorerie distincte du résultat.
+- Achat d’aliments, stock partagé et consommation affectée au cycle sans double décaissement.
+- Dépenses, ventes et paiements partiels ; créances, dettes et effectifs.
 - Correction d’une opération et annulation de ses effets.
-- Sauvegarde JSON, import contrôlé et restauration d’une copie illisible.
-- Échec de stockage : le formulaire et les données antérieures sont conservés.
+- Export/import JSON, copie illisible et échec de stockage sans perte du formulaire.
 - Séparation du mode exemple et des données personnelles.
-- Nouveau cycle reprenant les hypothèses sans recopier les mouvements.
-- Thèmes clair et sombre mémorisés sans modifier les données financières.
-- Présence et chargement de Pia ; message défavorable quand la trésorerie est négative.
-- Pages et formulaires contenus dans la largeur ; navigation utilisable à 320, 390 et 430 pixels.
-- Quatre actions courantes accessibles dans le premier écran de 390 × 664 pixels.
-- Réouverture et saisie d’une perte hors connexion après le premier chargement complet.
+- Cycle suivant reprenant les hypothèses sans les opérations réelles.
+- Thèmes clair et sombre sans modification des données financières.
+- Image de Pia et messages liés aux chiffres.
+- Navigation, formulaires et tableaux contenus dans leur cadre, dont le budget replié puis déplié dans WebKit.
+- Quatre saisies visibles dès l’ouverture au format 390 × 664.
+- Ouverture verte en courbe, libération de l’application après préparation, relecture et réduction des animations.
+- Réouverture et saisie d’une perte après coupure réseau.
 
-Les essais sont exécutés dans Chromium, avec un profil ordinateur et un profil téléphone. Ils ne remplacent pas une vérification matérielle dans Safari sur iPhone.
-Les captures de l’accueil mobile et bureau ont également servi à la revue visuelle : hauteur de la carte, accès aux actions, position de défilement et débordement des en-têtes ont été corrigés.
+Le moteur financier est conservé. La limite globale de la suite est de six minutes ; les limites individuelles des essais restent identiques. Le passage précédent avait réussi 53 parcours avant d’atteindre sa limite globale de quatre minutes.
 
-## Identité
-[Guide visuel](identite-visuelle.md). Le style reprend la famille Clair et l’adapte à la ferme : typographie système, cartes arrondies, dégradé de trésorerie, surfaces translucides, vert forêt et menthe, mascotte jaune.
-Le cycle sélectionné et son jour sont visibles dès l’en-tête. Sur téléphone, le message de Pia est intégré à la carte financière et les formulaires s’ouvrent depuis le bas.
+## Hors connexion
+
+Chromium utilise la simulation réseau. Le test WebKit utilise un serveur isolé sans cache HTTP : il prépare le cache de l’application, arrête le serveur et vérifie d’abord qu’un appel réseau échoue. L’accueil, l’image de Pia et les données restent disponibles après réouverture, puis une perte est enregistrée.
+
+Cette méthode évite la limite de la simulation réseau WebKit de Playwright : https://github.com/microsoft/playwright/issues/42775. L’essai n’est ni ignoré ni marqué comme échec attendu.
 
 ## Données et limites
-Le moteur et les clés de sauvegarde financière sont conservés. La refonte ne migre ni ne réinitialise les saisies existantes.
-Stockage dans le navigateur ; export JSON nécessaire pour une copie séparée ou un transfert. Pas de synchronisation cloud ni de compte dans cette version.
-Les règlements modifient le montant cumulé payé/encaissé ; aucun journal de paiements datés distinct.
-Les investissements, amortissements et bilans réglementaires ne sont pas inclus. Les frais fixes sont affectés au cycle, sans annualisation automatique.
-Une correction passe par une suppression confirmée puis une nouvelle saisie. Les cycles clôturés restent figés.
 
-## Reprise prévue
-Un point de vérification est programmé pour le 24 octobre 2026. Conserver l’identité et la priorité au téléphone lors des corrections suivantes.
+La refonte conserve la clé `clair.ferme.v2` et ne réinitialise pas les saisies. Les données restent dans ce navigateur sur cet appareil. L’export JSON fournit une copie séparée et permet un transfert ; aucun compte et aucune synchronisation cloud ne sont ajoutés.
+
+Les paiements modifient les cumuls payés ou encaissés, sans journal de règlements datés distinct. Les investissements, amortissements et bilans réglementaires restent exclus. Les frais fixes sont affectés au cycle. Une correction passe par une suppression confirmée puis une nouvelle saisie. Les cycles clôturés restent figés.
+
+## Environnement des essais
+
+GitHub Actions utilise l’image officielle `mcr.microsoft.com/playwright:v1.56.1-noble`, avec la même version que `@playwright/test`. Les navigateurs et leurs dépendances système sont préinstallés. Cette configuration évite les blocages de téléchargement des dépendances lors d’une nouvelle exécution.

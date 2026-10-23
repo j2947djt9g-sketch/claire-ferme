@@ -1,24 +1,42 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#091511">
-<meta name="description" content="Vos cycles, vos dépenses et vos objectifs. Un suivi simple pour votre ferme avicole.">
+<meta name="theme-color" content="#fbf9f2">
+<meta name="description" content="Votre cycle, vos dépenses, votre ferme au clair. Une application simple pour votre élevage avicole.">
 <title>Clair Ferme · Votre ferme, au clair</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Clair Ferme">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="assets/pia.png">
+<link rel="apple-touch-icon" href="assets/pia-flat.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=0.2.2">
-<script type="module" src="src/app.mjs?v=0.2.2"></script>
+<link rel="preload" as="image" href="assets/pia-flat.png">
+<link rel="stylesheet" href="launch.css?v=0.3.0">
+<link rel="stylesheet" href="styles.css?v=0.3.0">
+<link rel="stylesheet" href="pasture.css?v=0.3.0">
+<script src="src/launch.js?v=0.3.0" defer></script>
+<script type="module" src="src/app.mjs?v=0.3.0"></script>
 <script type="module" src="src/pwa.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#main">Aller au contenu</a>
-<div id="app"><main class="boot"><div class="brand-mark">c.</div><h1>Clair Ferme</h1><p>Votre ferme, au clair.</p><noscript>Activez JavaScript pour utiliser l’application.</noscript></main></div>
+<div id="launch-screen" role="status" aria-label="Ouverture de Clair Ferme" aria-live="polite">
+ <div class="launch-curtain" aria-hidden="true"></div>
+ <div class="launch-brand">
+  <span class="launch-monogram" aria-hidden="true">c<span></span></span>
+  <strong class="launch-title">clair<span>ferme</span></strong>
+  <p class="launch-tagline">Votre ferme. Au clair.</p>
+ </div>
+ <div class="launch-foot">
+  <span class="launch-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+  <p id="launch-status">Préparation de votre ferme…</p>
+  <button id="launch-retry" hidden>Réessayer</button>
+ </div>
+</div>
+<div id="app" aria-busy="true" inert><main class="boot"><h1>Clair Ferme</h1><p>Votre ferme, au clair.</p></main></div>
+<noscript><style>#launch-screen,#app{display:none}</style><p style="padding:40px;font-family:system-ui">Activez JavaScript pour ouvrir Clair Ferme.</p></noscript>
 <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="import-file" accept=".json,application/json" hidden>

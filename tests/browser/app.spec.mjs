@@ -1,7 +1,8 @@
 import {test,expect} from "@playwright/test";
+import {outageOrigin} from "./offline-origin.mjs";
 const D=page=>page.getByRole("dialog");
-async function setup(page){
- await page.goto("/");
+async function setup(page,url="/"){
+ await page.goto(url);
  await page.getByRole("button",{name:/Configurer mon premier cycle/}).click();
  const d=D(page);
  await d.getByLabel("Nom de la ferme",{exact:true}).fill("Ferme Test");
@@ -84,6 +85,10 @@ test("les pages et formulaires restent dans la largeur de l’écran",async({pag
   await nav(page,name);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
  }
  await nav(page,"Vue d’ensemble");
+ await page.locator(".compact-budget summary").click();
+ await expect(page.locator(".compact-budget table")).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.locator(".compact-budget summary").click();
  await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Explorer un exemple fictif",exact:true}).click();
  await expect(page.locator(".pia.hero")).toBeVisible();
@@ -125,16 +130,18 @@ test("une sauvegarde illisible est conservée et peut être remplacée par un im
  expect((await data(page)).cycles[0].name).toBe("Bande test");
 });
 
-test("la mascotte et le thème suivent les vrais chiffres sans modifier les données",async({page})=>{
+test("la mascotte et les thèmes suivent les vrais chiffres sans modifier les données",async({page})=>{
  await setup(page);
  await expect(page.locator(".pia.hero")).toBeVisible();
  await page.waitForFunction(()=>document.querySelector(".pia.hero")?.naturalWidth>0);
  const before=JSON.stringify(await data(page));
- await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
  expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
- await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#f3f6f1");
+ await page.getByRole("button",{name:"Passer au thème sombre",exact:true}).click();
+ expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
  expect(JSON.stringify(await data(page))).toBe(before);
- await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ await page.reload();expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
+ await page.getByRole("button",{name:"Passer au thème clair",exact:true}).click();
+ await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content","#fbf9f2");
  await page.getByRole("button",{name:"Dépense",exact:true}).click();
  await D(page).getByLabel("Libellé",{exact:true}).fill("Dépense importante");
  await D(page).getByLabel("Montant total (FCFA)",{exact:true}).fill("600000");
@@ -156,20 +163,33 @@ test("la navigation reste disponible sur les petits téléphones",async({page})=
   expect(navBox.y+navBox.height).toBeLessThanOrEqual(844);
  }
 });
-test("les données et l’accueil se retrouvent hors connexion après la première ouverture",async({page,context})=>{
- await setup(page);
- await page.evaluate(()=>navigator.serviceWorker.ready);
- await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
- const before=await data(page);
- await context.setOffline(true);
- await page.reload();
- await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
- expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
- await page.getByRole("button",{name:"Perte",exact:true}).click();
- await D(page).getByLabel("Nombre de poulets perdus",{exact:true}).fill("1");
- await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
- expect((await data(page)).losses).toHaveLength(1);
- await context.setOffline(false);
+test("les données et l’accueil se retrouvent hors connexion après la première ouverture",async({page,context,browserName})=>{
+ // WebKit's setOffline flag blocks even local worker responses (Playwright #42775).
+ // Stop an isolated, no-store origin instead; the navigation and assets must use the app cache.
+ const origin=browserName==="webkit"?await outageOrigin():null;
+ try{
+  await setup(page,origin?.url||"/");
+  await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+  const before=await data(page);
+  if(origin){
+   await origin.stop();
+   await expect(fetch(origin.url,{signal:AbortSignal.timeout(1000)})).rejects.toThrow();
+  }else await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
+  expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
+  await expect(page.locator("#launch-screen")).toBeHidden();
+  await expect(page.locator(".pia.hero")).toBeVisible();
+  await page.waitForFunction(()=>document.querySelector(".pia.hero")?.naturalWidth>0);
+  await page.getByRole("button",{name:"Perte",exact:true}).click();
+  await D(page).getByLabel("Nombre de poulets perdus",{exact:true}).fill("1");
+  await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
+  expect((await data(page)).losses).toHaveLength(1);
+ }finally{
+  if(origin)await origin.stop();
+  else await context.setOffline(false);
+ }
 });
 
 test("les quatre saisies courantes restent accessibles dès l’ouverture sur téléphone",async({page})=>{
@@ -181,4 +201,68 @@ test("les quatre saisies courantes restent accessibles dès l’ouverture sur t�
   expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThan(dock.y);
  }
  await expect(page.getByRole("button",{name:"Voir le cycle sélectionné",exact:true})).toContainText("/ 60");
+});
+
+async function preview(page,testInfo,key){
+ await page.screenshot({path:testInfo.outputPath(key+".png"),fullPage:true});
+ const encoded=(await page.screenshot({type:"jpeg",quality:65,fullPage:false,scale:"css"})).toString("base64");
+ for(let i=0;i<encoded.length;i+=6000)console.log("CF_"+key+"_"+Math.floor(i/6000)+":"+encoded.slice(i,i+6000));
+}
+test("une ouverture illustrée accompagne le chargement réel puis libère l’application",async({page},testInfo)=>{
+ let release;const gate=new Promise(resolve=>{release=resolve;});
+ await page.route("**/src/app.mjs*",async route=>{await gate;await route.continue();});
+ const splash=page.getByRole("status",{name:"Ouverture de Clair Ferme",exact:true});
+ try{
+  await page.goto("/",{waitUntil:"commit"});
+  await expect(splash).toBeVisible();
+  await expect(page.locator("#app")).toHaveAttribute("inert","");
+  await expect(page.locator(".launch-brand .launch-monogram")).toBeVisible();
+ }finally{release();}
+ await expect(splash).toBeHidden({timeout:8000});
+ await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+ await expect(page.getByRole("button",{name:/Configurer mon premier cycle/})).toBeVisible();
+});
+test("l’animation peut être revue et respecte la réduction des mouvements",async({page})=>{
+ await page.emulateMedia({reducedMotion:"reduce"});await setup(page);await nav(page,"Sauvegarde");
+ await page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true}).click();
+ await expect(page.locator("#launch-screen")).toBeVisible();
+ expect(await page.locator(".launch-curtain").evaluate(el=>getComputedStyle(el).transitionDuration.split(",").every(value=>parseFloat(value)===0))).toBe(true);
+ await expect(page.locator("#launch-screen")).toBeHidden({timeout:4000});
+ await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+});
+test("tablettes et téléphone en paysage gardent une navigation et des formulaires utilisables",async({page},testInfo)=>{
+ test.setTimeout(60000);await setup(page);
+ for(const [width,height]of [[768,1024],[1024,768],[820,1180],[1180,820],[844,390]]){
+  await page.setViewportSize({width,height});
+  for(const screen of ["Vue d’ensemble","Opérations","Aliments","Cycles et budgets","Sauvegarde"]){
+   await nav(page,screen);
+   const layout=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:Array.from(document.querySelectorAll("body *")).filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,10).map(el=>({tag:el.tagName,cls:el.className,right:el.getBoundingClientRect().right}))}));
+   if(layout.scroll>layout.width+1)console.log("TABLET_LAYOUT",JSON.stringify({screen,width,height,...layout}));
+   expect(layout.scroll).toBeLessThanOrEqual(layout.width+1);
+  }
+  await nav(page,"Vue d’ensemble");await page.getByRole("button",{name:"Dépense",exact:true}).click();
+  const box=await D(page).boundingBox();expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width+1);
+  expect(await D(page).evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  expect(await D(page).getByLabel("Libellé",{exact:true}).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+  await D(page).getByRole("button",{name:"Fermer",exact:true}).click();
+ }
+ if(testInfo.project.name==="desktop"){await page.setViewportSize({width:768,height:1024});await nav(page,"Vue d’ensemble");await preview(page,testInfo,"TABLET");}
+});
+test("les saisies existantes restent intactes avec le nouveau thème par défaut",async({page})=>{
+ await setup(page);const before=await data(page);
+ await page.evaluate(()=>{localStorage.setItem("clair.ferme.theme","dark");localStorage.removeItem("clair.ferme.appearance.v3");});
+ await page.reload();await expect(page.locator("#launch-screen")).toBeHidden();
+ expect(await page.locator("html").getAttribute("data-theme")).toBe("light");
+ expect(await data(page)).toEqual(before);
+});
+test("l’accueil illustré et le premier bouton restent utilisables sur les formats mobiles",async({page},testInfo)=>{
+ for(const [width,height]of [[320,664],[390,664],[390,844],[768,1024],[1024,768],[844,390]]){
+  await page.setViewportSize({width,height});await page.goto("/");
+  await expect(page.locator("#launch-screen")).toBeHidden();
+  await expect(page.locator(".welcome-world .farm-scene")).toBeVisible();
+  const button=page.getByRole("button",{name:/Configurer mon premier cycle/});await expect(button).toBeVisible();
+  const box=await button.boundingBox();expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(height);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ if(testInfo.project.name==="mobile"){await page.setViewportSize({width:390,height:844});await page.goto("/");await expect(page.locator("#launch-screen")).toBeHidden();await preview(page,testInfo,"WELCOME");}
 });

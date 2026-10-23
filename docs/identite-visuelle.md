@@ -1,38 +1,27 @@
-# Clair Ferme · identité 0.2
+# Clair Ferme · identité 0.3
 
-Clair Ferme appartient à la famille Clair : typographie système, solde mis en avant, carte en dégradé, surfaces translucides, boutons arrondis et présence d’une mascotte à côté du montant. Le langage visuel est adapté à une ferme avicole et à un usage sur téléphone.
+Clair Ferme conserve le vert, les tons crème et l’univers agricole. Les références de mouvement inspirent uniquement l’entrée : un logo centré, puis une transition douce en courbe. Pia et les repères de Clair restent présents.
 
-## Signature
-Votre ferme, au clair.
-Une ferme dans la poche : l’argent disponible, le cycle en cours et le cap du budget.
+## Palette et mascotte
 
-## Pia
-Pia est le nom provisoire de la mascotte : une petite poussine jaune, en salopette verte, avec une feuille dans les cheveux. Le personnage est un poussin féminin, sans corps humain. Son rôle est d’accompagner la lecture des chiffres, avec calme.
-Le message dépend de données réelles : trésorerie négative, cycle terminé, prévision sous l’objectif, règlements en attente, premier mouvement ou suivi en cours. La mascotte ne promet aucun bénéfice et n’invente pas de conseil d’élevage.
-Illustration originale créée pour ce projet ; elle reste indépendante des visuels de Clair personnel.
+Ouverture : #23533a. Actions : #2c6d4c. Fond crème : #fbf9f2. Cartes : #fffefa. Ciel doux : #dff1f8. Encre : #253b2c. Jaune poussin : #f2d280. Collines : #c2dcaa, #99c681, #76b36c et #5b9b58. Le thème sombre utilise un fond vert forêt #122d24.
 
-## Couleurs
-- Nuit forêt : #091511, fond du thème sombre.
-- Vert de la carte de trésorerie : #234e32 vers #397044.
-- Menthe : #b9ef9c, actions et repères.
-- Jaune poussin : #f4ce70, chaleur et points à surveiller.
-- Ivoire : #f4f8f1, texte principal du thème sombre.
-- Fond clair : #f3f6f1 ; actions en vert #245f39.
+Pia est une petite poussine jaune en salopette verte avec une barrette feuille. Ses messages suivent les données du cycle et la trésorerie. Elle ne promet aucun bénéfice et ne donne pas de conseil d’élevage inventé. Son illustration se trouve dans assets/pia-flat.png ; les décors vectoriels sont dans src/scenes.mjs.
 
-Le jaune marque une vigilance. Le rouge indique une situation défavorable ; il n’efface jamais la valeur réelle affichée.
+## Ouverture
 
-## Téléphone en premier
-L’accueil présente la trésorerie, le message de Pia, quatre actions courantes, la progression du cycle et deux indicateurs. Le détail du budget se déplie.
-Navigation fixe translucide en bas ; cinq destinations : Accueil, Journal, Aliments, Cycles, Plus. Les noms accessibles restent explicites.
-Les formulaires s’ouvrent depuis le bas sur téléphone. Les champs utilisent une taille lisible sans zoom automatique sur iPhone. Le bas de l’écran tient compte de la zone de sécurité.
-La version bureau développe ces mêmes composants en colonnes ; elle ne dicte pas l’organisation du téléphone.
+Le monogramme clair et le nom clair ferme apparaissent au centre d’un fond vert profond. Une fois l’application préparée et Pia décodée, le panneau vert remonte avec un bord courbe et dévoile l’écran réel. La signature initiale dure au moins 400 ms avec animation ; la transition dure 650 ms. Un démarrage long propose Réessayer. Aucun pourcentage de progression fictif n’est affiché.
 
-## Texte et chiffres
-Employer des mots concrets : argent disponible, à payer, à encaisser, déjà engagé, bénéfice prévu.
-Distinguer la trésorerie de la ferme et les résultats du cycle. Toujours qualifier un résultat prévisionnel.
-Les données d’exemple sont fictives et dans un espace séparé. Aucun message ne suppose un paiement ou une opération qui n’a pas été saisi.
+Le bouton « Revoir l’ouverture animée » dans Plus rejoue la séquence. Le réglage système de réduction des animations supprime les mouvements. Le clavier retrouve le bouton d’origine après la relecture.
 
-## Mouvement et installation
-Transitions courtes sur boutons et ouverture des formulaires, désactivables avec le réglage système de réduction des animations.
-Manifeste et service worker pour l’écran d’accueil et la réouverture hors connexion après un premier chargement complet.
-Le mode clair ou sombre est mémorisé séparément des données financières.
+Les captures de référence sont fixes : la vitesse et l’accélération du mouvement sont une interprétation du style demandé.
+
+## Téléphone et tablette
+
+L’accueil présente le cycle et son jour, la trésorerie avec Pia, quatre saisies accessibles au pouce et les cartes du cycle. Les données sont lisibles dans des cartes claires arrondies ; la navigation translucide garde ses repères verts.
+
+Sur tablette, les cartes s’organisent en colonnes et la navigation reste en bas. À partir de 1 200 pixels, elle passe sur le côté. Les champs sont à 16 pixels, les marges de sécurité de l’iPhone sont prises en compte et les tableaux défilent dans leur propre cadre.
+
+## Données
+
+Distinguer argent disponible, coût engagé, résultat provisoire et prévision. Les données d’exemple sont fictives et séparées des données personnelles. Le moteur et la clé financière `clair.ferme.v2` sont conservés ; l’apparence reste dans `clair.ferme.appearance.v3`.

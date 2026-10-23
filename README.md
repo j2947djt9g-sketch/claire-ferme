@@ -3,9 +3,14 @@
 Application mobile web pour suivre des bandes de poulets, leurs dépenses et leur budget, en FCFA. Elle reprend les codes visuels de Clair et possède son propre code et son propre espace de données. Aucun Firebase.
 
 ## Identité
-Version 0.2.2 : forêt, menthe et jaune poussin ; carte de trésorerie en dégradé, surfaces translucides, typographie système, navigation au pouce et formulaires en feuilles sur téléphone. **Pia**, petite poussine en salopette verte, accompagne les chiffres avec des messages issus des données réelles.
+Version 0.3.0 : prairie, crème et ciel doux ; cartes claires, typographie système, navigation au pouce et formulaires adaptés au téléphone. **Pia**, petite poussine en salopette verte et barrette feuille, accompagne les chiffres avec des messages issus des données réelles. L’accueil conserve une ferme illustrée originale ; l’entrée reprend une transition fluide en courbe dans la même palette verte.
 [Guide de l’identité visuelle](docs/identite-visuelle.md).
-Les thèmes clair et sombre sont mémorisés séparément des données financières.
+Le thème clair est proposé au premier lancement ; le thème sombre reste disponible. L’apparence est mémorisée séparément des données financières.
+
+## Ouverture et appareils
+L’ouverture présente le logo sur fond vert profond, puis un panneau vert remonte en courbe pour révéler l’application. La signature initiale dure brièvement et attend la préparation des données et le décodage de Pia, sans faux pourcentage de progression. Si le démarrage échoue, un bouton permet de réessayer. Dans Plus, « Revoir l’ouverture animée » rejoue cette séquence. Le réglage système de réduction des animations est respecté.
+
+Téléphone en priorité, dont le format iPhone 13 ; tablette en portrait et paysage avec une navigation en bas jusqu’à 1 199 pixels. Sur grand écran, la navigation passe sur le côté. Champs de saisie à 16 pixels, zones tactiles et marges de sécurité de l’iPhone. Application web installable depuis Safari ou Chrome.
 
 ## Priorité produit
 Configurer la durée et les hypothèses du cycle, enregistrer le réel, comprendre trésorerie et résultat, puis préparer la bande suivante. Les références Excel fournies sont indicatives ; elles ne deviennent pas les données de la ferme. Les montants de démonstration sont fictifs et explicitement signalés.
@@ -40,11 +45,11 @@ Le mode exemple utilise un stockage séparé. Il n’écrase pas les données pe
 
 ## Vérification
 48 cas de calcul dans `tests/cases.mjs`. Les mêmes cas s’exécutent avec Node dans GitHub Actions.
-Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple largeur des écrans, thèmes, messages de Pia, accès aux actions dès l’ouverture et saisie hors connexion.
-Pour les lancer : `npm install`, `npx playwright install chromium`, `npm run test:browser`.
+Les parcours Playwright couvrent ordinateur et téléphone : configuration, persistance, opérations, paiements partiels, stock, correction, import/export, séparation du mode exemple, largeur des écrans, thèmes, messages de Pia, accès aux actions dès l’ouverture et saisie hors connexion.
+Pour les lancer : `npm install`, `npx playwright install --with-deps chromium webkit`, `npm run test:browser`.
 
-Dernier passage vérifié : **48 tests de calcul et 26 essais navigateur réussis** (Chromium ordinateur et téléphone).
-[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/39484207012).
+Dernier passage vérifié : **48 tests de calcul et 54 essais navigateur réussis** (Chromium ordinateur et téléphone, WebKit au format iPhone).
+[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/40012283442).
 Résultats et limites dans [docs/verification.md](docs/verification.md).
 Les captures et traces des essais sont dans les artefacts GitHub Actions (7 jours).
 
