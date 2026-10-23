@@ -9,7 +9,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -19,8 +20,6 @@ jobs:
         run: npm test
       - name: Installer les outils de test
         run: npm install --no-package-lock --ignore-scripts
-      - name: Installer Chromium et WebKit
-        run: npx playwright install --with-deps chromium webkit
       - name: Vérifier les parcours sur ordinateur, téléphone et Safari
         run: npm run test:browser
       - uses: actions/upload-artifact@v5
