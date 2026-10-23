@@ -1,7 +1,8 @@
 import {test,expect} from "@playwright/test";
+import {outageOrigin} from "./offline-origin.mjs";
 const D=page=>page.getByRole("dialog");
-async function setup(page){
- await page.goto("/");
+async function setup(page,url="/"){
+ await page.goto(url);
  await page.getByRole("button",{name:/Configurer mon premier cycle/}).click();
  const d=D(page);
  await d.getByLabel("Nom de la ferme",{exact:true}).fill("Ferme Test");
@@ -84,6 +85,10 @@ test("les pages et formulaires restent dans la largeur de l’écran",async({pag
   await nav(page,name);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
  }
  await nav(page,"Vue d’ensemble");
+ await page.locator(".compact-budget summary").click();
+ await expect(page.locator(".compact-budget table")).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.locator(".compact-budget summary").click();
  await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Explorer un exemple fictif",exact:true}).click();
  await expect(page.locator(".pia.hero")).toBeVisible();
@@ -158,20 +163,33 @@ test("la navigation reste disponible sur les petits téléphones",async({page})=
   expect(navBox.y+navBox.height).toBeLessThanOrEqual(844);
  }
 });
-test("les données et l’accueil se retrouvent hors connexion après la première ouverture",async({page,context})=>{
- await setup(page);
- await page.evaluate(()=>navigator.serviceWorker.ready);
- await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
- const before=await data(page);
- await context.setOffline(true);
- await page.reload();
- await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
- expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
- await page.getByRole("button",{name:"Perte",exact:true}).click();
- await D(page).getByLabel("Nombre de poulets perdus",{exact:true}).fill("1");
- await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
- expect((await data(page)).losses).toHaveLength(1);
- await context.setOffline(false);
+test("les données et l’accueil se retrouvent hors connexion après la première ouverture",async({page,context,browserName})=>{
+ // WebKit's setOffline flag blocks even local worker responses (Playwright #42775).
+ // Stop an isolated, no-store origin instead; the navigation and assets must use the app cache.
+ const origin=browserName==="webkit"?await outageOrigin():null;
+ try{
+  await setup(page,origin?.url||"/");
+  await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+  const before=await data(page);
+  if(origin){
+   await origin.stop();
+   await expect(fetch(origin.url,{signal:AbortSignal.timeout(1000)})).rejects.toThrow();
+  }else await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading",{name:"Votre ferme, au clair."})).toBeVisible();
+  expect((await data(page)).cycles[0].id).toBe(before.cycles[0].id);
+  await expect(page.locator("#launch-screen")).toBeHidden();
+  await expect(page.locator(".pia.hero")).toBeVisible();
+  await page.waitForFunction(()=>document.querySelector(".pia.hero")?.naturalWidth>0);
+  await page.getByRole("button",{name:"Perte",exact:true}).click();
+  await D(page).getByLabel("Nombre de poulets perdus",{exact:true}).fill("1");
+  await D(page).getByRole("button",{name:"Enregistrer",exact:true}).click();
+  expect((await data(page)).losses).toHaveLength(1);
+ }finally{
+  if(origin)await origin.stop();
+  else await context.setOffline(false);
+ }
 });
 
 test("les quatre saisies courantes restent accessibles dès l’ouverture sur téléphone",async({page})=>{
@@ -198,7 +216,7 @@ test("une ouverture illustrée accompagne le chargement réel puis libère l’a
   await page.goto("/",{waitUntil:"commit"});
   await expect(splash).toBeVisible();
   await expect(page.locator("#app")).toHaveAttribute("inert","");
-  if(testInfo.project.name==="mobile"){await page.waitForTimeout(650);await preview(page,testInfo,"LAUNCH");}
+  await expect(page.locator(".launch-brand .sprout")).toBeVisible();
  }finally{release();}
  await expect(splash).toBeHidden({timeout:8000});
  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
