@@ -6,7 +6,7 @@ const qty=n=>new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2}).format(n);
 const niceDate=d=>new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00"));
 const STORE="clair.ferme.v2",DEMO="clair.ferme.demo.v2";
 let theme="light";try{theme=localStorage.getItem("clair.ferme.appearance.v3")==="dark"?"dark":"light";}catch{}
-function applyTheme(){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",theme==="dark"?"#122d24":"#fbf9f2");}
+function applyTheme(){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",theme==="dark"?"#09090b":"#f7f7f8");}
 applyTheme();
 let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer,savedRaw=null;
 const icons={

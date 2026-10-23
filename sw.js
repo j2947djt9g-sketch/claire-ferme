@@ -1,5 +1,5 @@
 const CACHE="clair-ferme-0.3.0";
-const CORE=["./launch.css?v=0.3.0","./pasture.css?v=0.3.0","./src/launch.js?v=0.3.0","./src/scenes.mjs","./","./index.html","./styles.css?v=0.3.0","./src/app.mjs?v=0.3.0","./src/domain.mjs","./src/pwa.mjs","./assets/pia-flat.png","./manifest.webmanifest","./icon.svg"];
+const CORE=["./mono.css?v=0.3.0","./launch.css?v=0.3.0","./pasture.css?v=0.3.0","./src/launch.js?v=0.3.0","./src/scenes.mjs","./","./index.html","./styles.css?v=0.3.0","./src/app.mjs?v=0.3.0","./src/domain.mjs","./src/pwa.mjs","./assets/pia-flat.png","./manifest.webmanifest","./icon.svg"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("clair-ferme-")&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener("fetch",event=>{
