@@ -23,7 +23,7 @@ test("le retour retrouve la page et la position de lecture",async({page})=>{
  const all=page.getByRole("button",{name:/Tout voir/});await all.scrollIntoViewIfNeeded();
  const before=await page.evaluate(()=>scrollY);
  await all.click();
- await expect(page.locator('main h1')).toContainText("Le réel");
+ await expect(page.locator('main h1')).toContainText("Dépenses et ventes");
  await page.getByRole("button",{name:/Retour à l’accueil/i}).click();
  await expect(page.locator(".balance-section")).toBeVisible();
  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeCloseTo(before,0);
