@@ -1,4 +1,4 @@
-# Clair Ferme · identité 0.3
+# Clair Ferme · identité 0.4
 
 Clair Ferme conserve le vert, les tons crème et l’univers agricole. Les références de mouvement inspirent uniquement l’entrée : un logo centré, puis une transition douce en courbe. Pia et les repères de Clair restent présents.
 
@@ -10,9 +10,9 @@ Pia est une petite poussine jaune en salopette verte avec une barrette feuille. 
 
 ## Ouverture
 
-Le monogramme clair et le nom clair ferme apparaissent au centre d’un fond vert profond. Une fois l’application préparée et Pia décodée, le panneau vert remonte avec un bord courbe et dévoile l’écran réel. La signature initiale dure au moins 400 ms avec animation ; la transition dure 650 ms. Un démarrage long propose Réessayer. Aucun pourcentage de progression fictif n’est affiché.
+Le monogramme clair et le nom clair ferme apparaissent au centre d’un fond vert profond. Une fois l’application préparée et Pia décodée, le panneau vert remonte avec un bord courbe et dévoile l’écran réel. La scène se déroule pendant 2 600 ms après préparation puis la transition dure 1 100 ms (masquage à 1 150 ms). Pia descend du ciel avec un léger rebond pendant que le décor apparaît en plusieurs plans. Le bouton « Passer l’animation » est disponible une fois l’application prête. Un démarrage long propose Réessayer. Aucun pourcentage de progression fictif n’est affiché.
 
-Le bouton « Revoir l’ouverture animée » dans Plus rejoue la séquence. Le réglage système de réduction des animations supprime les mouvements. Le clavier retrouve le bouton d’origine après la relecture.
+Le bouton « Revoir l’ouverture animée » dans Plus rejoue la séquence. Le réglage système de réduction des animations supprime les mouvements et l’attente de la scène. Le clavier retrouve le bouton d’origine après la relecture.
 
 Les captures de référence sont fixes : la vitesse et l’accélération du mouvement sont une interprétation du style demandé.
 
