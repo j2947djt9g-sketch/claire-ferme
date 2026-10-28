@@ -3,7 +3,7 @@
 Application mobile web pour suivre des bandes de poulets, leurs dépenses et leur budget, en FCFA. Elle reprend les codes visuels de Clair et possède son propre code et son propre espace de données. Aucun Firebase.
 
 ## Identité
-Version 0.4.0 : prairie, crème et ciel doux ; cartes claires, typographie système, navigation au pouce et formulaires adaptés au téléphone. **Pia**, petite poussine en salopette verte et barrette feuille, accompagne les chiffres avec des messages issus des données réelles. L’accueil conserve une ferme illustrée originale ; l’entrée reprend une transition fluide en courbe dans la même palette verte.
+Version 0.4.1 : prairie, crème et ciel doux ; cartes claires, typographie système, navigation au pouce et formulaires adaptés au téléphone. **Pia**, petite poussine en salopette verte et barrette feuille, accompagne les chiffres avec des messages issus des données réelles. L’accueil conserve une ferme illustrée originale ; l’entrée reprend une transition fluide en courbe dans la même palette verte.
 [Guide de l’identité visuelle](docs/identite-visuelle.md).
 Le thème clair est proposé au premier lancement ; le thème sombre reste disponible. L’apparence est mémorisée séparément des données financières.
 
@@ -49,7 +49,7 @@ Les parcours Playwright couvrent ordinateur et téléphone : configuration, pers
 Pour les lancer : `npm install`, `npx playwright install --with-deps chromium webkit`, `npm run test:browser`.
 
 Dernier passage vérifié : **48 tests de calcul et 75 essais navigateur réussis** (Chromium ordinateur et téléphone, WebKit au format iPhone).
-[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/40701160336).
+[Voir les vérifications réussies](https://github.com/j2947djt9g-sketch/claire-ferme/actions/runs/40748335664).
 Résultats et limites dans [docs/verification.md](docs/verification.md).
 Les captures et traces des essais sont dans les artefacts GitHub Actions (7 jours).
 
@@ -62,3 +62,6 @@ Après un premier chargement complet, l’application se rouvre hors connexion. 
 
 ## Des actions plus directes
 Un retour contextuel retrouve l’écran précédent, sa position de lecture et le bouton d’origine. Depuis le choix rapide, le retour garde les champs saisis tant que la fenêtre n’est pas fermée ou annulée. Les montants À payer et À encaisser amènent directement à la liste des règlements. Si les aliments manquent, l’achat peut se faire depuis la consommation puis reprendre celle-ci immédiatement. Les cartes et boutons gagnent du relief sans nouvelle barre d’outils.
+
+## Lisibilité 0.4.1
+Le solde utilise un vert uni avec des montants blancs. Les textes, tableaux et libellés sont plus grands et plus foncés. Les titres des pages désignent directement leur fonction ; les liens du solde indiquent leur action. Les fonds de l’interface sont unis et les ombres conservent le relief.
