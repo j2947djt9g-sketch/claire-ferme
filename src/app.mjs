@@ -8,6 +8,8 @@ const STORE="clair.ferme.v2",DEMO="clair.ferme.demo.v2";
 let theme="light";try{theme=localStorage.getItem("clair.ferme.appearance.v3")==="dark"?"dark":"light";}catch{}
 function applyTheme(){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",theme==="dark"?"#122d24":"#fbf9f2");}
 applyTheme();
+const launchLandscape=document.querySelector(".launch-landscape");
+if(launchLandscape)launchLandscape.innerHTML=farmScene("launch");
 let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer,savedRaw=null;
 const icons={
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
@@ -66,13 +68,31 @@ const tr=cells=>"<tr>"+cells.map(c=>"<td>"+c+"</td>").join("")+"</tr>";
 function header(eyebrow,title,subtitle,actions=""){
  return '<div class="page-head"><div class="page-scenery" aria-hidden="true">'+farmScene("page")+'</div><div><p class="eyebrow">'+eyebrow+'</p><h1>'+title+'</h1><p class="subtitle">'+subtitle+'</p></div><div class="head-actions">'+actions+'</div></div>';
 }
+const pageNames={home:"l’accueil",journal:"Opérations",stock:"Aliments",cycles:"Cycles",settings:"Plus"};
+const trail=[];
+let dialogTrail=[],dialogOpener=null,dialogOrigin=null,resumeConsumption=false;
+function navigate(next,{back=false,section}={}){
+ if(!Object.hasOwn(pageNames,next))return;
+ let position=0;
+ if(back){const previous=trail.pop();next=previous?.page||"home";position=previous?.scroll||0;}
+ else if(page!==next){trail.push({page,scroll:window.scrollY});if(trail.length>20)trail.shift();}
+ const changed=page!==next;
+ page=next;if(changed)render();
+ requestAnimationFrame(()=>{
+  const main=$("#main");if(!main)return;
+  if(changed)main.classList.add("page-arrive");
+  const target=section?document.getElementById(section):null;
+  if(target){const heading=target.querySelector("h2");heading?.setAttribute("tabindex","-1");heading?.focus({preventScroll:true});target.scrollIntoView({block:"start"});}
+  else{main.focus({preventScroll:true});window.scrollTo({top:position,left:0,behavior:"instant"});}
+ });
+}
 function render(){
  const root=$("#app");
  if(loadError){root.innerHTML='<main class="welcome"><div class="welcome-card"><div class="brand-mark">c</div><h1>Retrouvons vos données</h1><p>La sauvegarde présente ne peut pas être ouverte. Elle a été conservée.</p><p class="form-error">'+esc(loadError)+'</p><div class="actions">'+btn("Télécharger la sauvegarde présente","raw-backup")+btn("Importer une sauvegarde","import","button secondary")+btn("Recommencer","reset-corrupt","button text")+'</div></div></main>';return;}
  if(!state.cycles.length){root.innerHTML=welcome();return;}
  const c=state.cycles.find(c=>c.id===state.selectedCycleId)||state.cycles[0];
  const nav=[["home","Vue d’ensemble","Accueil"],["journal","Opérations","Journal"],["stock","Aliments","Aliments"],["cycles","Cycles et budgets","Cycles"],["settings","Sauvegarde","Plus"]];
- root.innerHTML='<div class="app-wall" aria-hidden="true"></div><aside class="sidebar"><a href="#home" class="brand" data-page="home"><span class="brand-mark">c</span><span>clair<span class="brand-sub">ferme</span></span></a><div class="farm-name">'+icon("leaf")+'<span>'+esc(state.settings.farmName)+'</span></div><p class="nav-label">AU RYTHME DE VOTRE FERME</p><nav aria-label="Navigation principale">'+nav.map(([id,label,short])=>'<button class="nav-item '+(page===id?"active":"")+'" data-page="'+id+'" aria-label="'+label+'" '+(page===id?'aria-current="page"':"")+'>'+icon(id)+'<span class="nav-desktop">'+label+'</span><span class="nav-mobile">'+short+'</span></button>').join("")+'</nav><div class="sidebar-bottom"><div class="side-companion">'+mascot("mini")+'<div><strong>Pia veille au grain.</strong><p>Un cycle après l’autre.</p></div></div><span class="live-dot"></span> '+(mode==="demo"?"Exemple fictif":"Enregistré sur cet appareil")+'</div></aside><div class="workspace"><header class="topbar"><a href="#home" class="mobile-brand" data-page="home"><span class="brand-mark">c</span><strong>clair<span>ferme</span></strong></a><span class="top-label">'+esc(state.settings.farmName)+'</span><div class="topbar-actions"><span class="saved" title="Données enregistrées sur cet appareil"><span class="live-dot"></span> '+(lastSaved?"Enregistré":"Sur cet appareil")+'</span>'+btn(icon(theme==="dark"?"sun":"moon"),"theme","icon-button theme-toggle",'aria-label="Passer au thème '+(theme==="dark"?"clair":"sombre")+'"')+'</div></header>'+(mode==="demo"?'<div class="demo-banner"><span><strong>Exemple fictif</strong><span class="demo-long"> · Explorez à votre rythme.</span></span>'+btn('<span class="demo-long">Passer à mes données</span><span class="demo-short">Mes données</span>',"real","button text",'aria-label="Passer à mes données"')+'</div>':"")+'<main id="main" tabindex="-1">'+({home:home,journal:journal,stock:stockPage,cycles:cyclesPage,settings:settingsPage}[page]||home)(c)+'</main><footer class="footer"><span>clair ferme · Avec vous, cycle après cycle.</span><span>Montants en FCFA</span></footer></div>';
+ root.innerHTML='<div class="app-wall" aria-hidden="true"></div><aside class="sidebar"><a href="#home" class="brand" data-page="home"><span class="brand-mark">c</span><span>clair<span class="brand-sub">ferme</span></span></a><div class="farm-name">'+icon("leaf")+'<span>'+esc(state.settings.farmName)+'</span></div><p class="nav-label">AU RYTHME DE VOTRE FERME</p><nav aria-label="Navigation principale">'+nav.map(([id,label,short])=>'<button class="nav-item '+(page===id?"active":"")+'" data-page="'+id+'" aria-label="'+label+'" '+(page===id?'aria-current="page"':"")+'>'+icon(id)+'<span class="nav-desktop">'+label+'</span><span class="nav-mobile">'+short+'</span></button>').join("")+'</nav><div class="sidebar-bottom"><div class="side-companion">'+mascot("mini")+'<div><strong>Pia veille au grain.</strong><p>Un cycle après l’autre.</p></div></div><span class="live-dot"></span> '+(mode==="demo"?"Exemple fictif":"Enregistré sur cet appareil")+'</div></aside><div class="workspace"><header class="topbar">'+(page!=="home"?btn(icon("arrow"),"back","icon-button back-button",'aria-label="Retour à '+(pageNames[trail.at(-1)?.page]||pageNames.home)+'"'):"")+'<a href="#home" class="mobile-brand" data-page="home"><span class="brand-mark">c</span><strong>clair<span>ferme</span></strong></a><span class="top-label">'+esc(state.settings.farmName)+'</span><div class="topbar-actions"><span class="saved" title="Données enregistrées sur cet appareil"><span class="live-dot"></span> '+(lastSaved?"Enregistré":"Sur cet appareil")+'</span>'+btn(icon(theme==="dark"?"sun":"moon"),"theme","icon-button theme-toggle",'aria-label="Passer au thème '+(theme==="dark"?"clair":"sombre")+'"')+'</div></header>'+(mode==="demo"?'<div class="demo-banner"><span><strong>Exemple fictif</strong><span class="demo-long"> · Explorez à votre rythme.</span></span>'+btn('<span class="demo-long">Passer à mes données</span><span class="demo-short">Mes données</span>',"real","button text",'aria-label="Passer à mes données"')+'</div>':"")+'<main id="main" tabindex="-1">'+({home:home,journal:journal,stock:stockPage,cycles:cyclesPage,settings:settingsPage}[page]||home)(c)+'</main><footer class="footer"><span>clair ferme · Avec vous, cycle après cycle.</span><span>Montants en FCFA</span></footer></div>';
 }
 function mascot(size=""){
  return '<img class="pia '+size+'" src="assets/pia-flat.png" alt="Pia, la petite poussine de Clair Ferme" width="1120" height="1376" decoding="async" '+(size==="hero"||size==="welcome-pia"?'fetchpriority="high"':'loading="lazy"')+'>';
@@ -101,7 +121,7 @@ function activity(c,limit=4){
  return '<div class="activity-list">'+rows.map(x=>'<article class="activity-row"><span class="activity-icon '+x.tone+'">'+icon(x.icon)+'</span><div class="activity-info"><strong>'+esc(x.title)+'</strong><span>'+esc(x.detail)+' · '+niceDate(x.date)+'</span></div><div class="activity-amount '+(x.tone==="in"?"income":"")+'"><strong>'+(x.amount===null?"—":money(x.amount))+'</strong><small>'+(x.balance?money(x.balance)+" restant":x.type==="Aliments"?"Coût du cycle":x.type==="Perte"?"Effectif actualisé":"Soldé")+'</small></div></article>').join("")+'</div>';
 }
 function welcome(){
- return '<main id="main" class="welcome pasture-welcome"><section class="welcome-horizon"><div class="welcome-world">'+farmScene("welcome")+'</div><a class="brand" href="#"><span class="brand-mark">c</span><span>clair<span class="brand-sub">ferme</span></span></a><div class="welcome-story"><span class="eyebrow">AU RYTHME DE VOTRE FERME</span><h1>Votre ferme.<br><em>Au clair.</em></h1><p>Un cycle après l’autre,<br>gardez le cap sur votre élevage.</p></div><div class="pasture-pia">'+mascot("welcome-pia")+'<span>Bonjour, moi c’est Pia !</span></div></section><section class="welcome-card"><span class="step-tag">CULTIVONS VOTRE PROJET</span><h2>Une ferme bien suivie,<br>l’esprit plus tranquille.</h2><p>Votre cycle, vos dépenses et vos objectifs. Tout commence avec vos chiffres.</p><div class="welcome-points"><span>'+icon("cycles")+'Cycles</span><span>'+icon("expense")+'Dépenses</span><span>'+icon("goal")+'Objectifs</span></div>'+btn("Configurer mon premier cycle "+icon("arrow"),"setup","button full")+'<div class="welcome-links">'+btn("Voir un exemple","demo","button text")+btn("Importer mes données","import","button text")+'</div><small>Enregistré sur cet appareil · Sauvegarde exportable</small></section></main>';
+ return '<main id="main" tabindex="-1" class="welcome pasture-welcome"><section class="welcome-horizon"><div class="welcome-world">'+farmScene("welcome")+'</div><a class="brand" href="#"><span class="brand-mark">c</span><span>clair<span class="brand-sub">ferme</span></span></a><div class="welcome-story"><span class="eyebrow">AU RYTHME DE VOTRE FERME</span><h1>Votre ferme.<br><em>Au clair.</em></h1><p>Un cycle après l’autre,<br>gardez le cap sur votre élevage.</p></div><div class="pasture-pia">'+mascot("welcome-pia")+'<span>Bonjour, moi c’est Pia !</span></div></section><section class="welcome-card"><span class="step-tag">CULTIVONS VOTRE PROJET</span><h2>Une ferme bien suivie,<br>l’esprit plus tranquille.</h2><p>Votre cycle, vos dépenses et vos objectifs. Tout commence avec vos chiffres.</p><div class="welcome-points"><span>'+icon("cycles")+'Cycles</span><span>'+icon("expense")+'Dépenses</span><span>'+icon("goal")+'Objectifs</span></div>'+btn("Configurer mon premier cycle "+icon("arrow"),"setup","button full")+'<div class="welcome-links">'+btn("Voir un exemple","demo","button text")+btn("Importer mes données","import","button text")+'</div><small>Enregistré sur cet appareil · Sauvegarde exportable</small></section></main>';
 }
 function stat(label,value,detail,tone="",symbol=""){
  return '<article class="stat '+tone+'"><div class="stat-label">'+label+(symbol?icon(symbol):"")+'</div><strong>'+value+'</strong><span>'+detail+'</span></article>';
@@ -162,13 +182,22 @@ function settingsPage(){
  return header("VOS DONNÉES","Tout garder, simplement.","Sauvegardez vos saisies et retrouvez ce qui reste à régler.")+
  '<div class="dashboard-grid"><section class="card"><p class="eyebrow">SAUVEGARDE ET TRANSFERT</p><h2>Vos données restent avec vous.</h2><p>Les saisies sont enregistrées dans ce navigateur, sur cet appareil. Exportez une sauvegarde pour les conserver ailleurs ou les transférer.</p><div class="actions">'+btn("Télécharger ma sauvegarde","backup")+btn("Importer une sauvegarde","import","button secondary")+btn("Exporter le journal CSV","csv","button text")+'</div><p class="helper">Le fichier JSON permet de restaurer l’application. Le CSV permet de consulter les opérations dans Excel. Pas de synchronisation entre appareils dans cette version.</p></section><section class="card"><h2>Ma ferme</h2><dl class="details"><dt>Nom</dt><dd>'+esc(state.settings.farmName)+'</dd><dt>Solde au départ</dt><dd>'+money(state.settings.openingCash)+'</dd><dt>Alerte aliments</dt><dd>'+qty(state.settings.stockThresholdKg)+' kg</dd></dl>'+btn("Modifier les paramètres","settings","button secondary")+'</section></div>'+
  '<section class="stats three">'+stat("Trésorerie actuelle",money(f.cash),"Solde de départ + encaissements − paiements")+stat("À encaisser",money(f.receivable),"Reste dû par les clients")+stat("À payer",money(f.payable),"Dépenses et achats d’aliments")+'</section>'+
- '<section class="card"><h2>Règlements à suivre</h2>'+(debts.length?table(["Opération","Échéance","Reste",""],debts.map(x=>tr([esc(x.title),x.dueDate?niceDate(x.dueDate):"Non renseignée",money(x.balance)+" "+(x.list==="sales"?"à encaisser":"à payer"),btn(x.list==="sales"?"Encaisser":"Payer","payment","button small secondary",'data-list="'+x.list+'" data-id="'+esc(x.id)+'"')]))):empty("Les règlements sont à jour.","Aucun paiement ni encaissement restant."))+'</section><section class="card"><div class="card-head"><h2>Apports de trésorerie</h2>'+btn("Ajouter un apport","contribution","button secondary")+'</div>'+note("Un apport augmente l’argent disponible. Il ne compte pas comme une vente ou un bénéfice.")+(state.contributions.length?table(["Date","Libellé","Montant"],state.contributions.slice().reverse().map(x=>tr([niceDate(x.date),esc(x.label),money(x.amount)]))):"")+'</section><section class="card"><h2>Votre ferme, dans la poche.</h2><p>Gardez Clair Ferme sur votre écran d’accueil pour retrouver vos cycles en un geste.</p>'+btn("Ajouter à mon écran d’accueil","install-app","button secondary")+btn("Revoir l’ouverture animée","replay-intro","button text")+'</section><div class="demo-link">'+(mode==="demo"?btn("Revenir à mes données","real","button text"):btn("Explorer un exemple fictif","demo","button text"))+'</div>';
+ '<section class="card settlements-card" id="settlements"><h2>Règlements à suivre</h2>'+(debts.length?table(["Opération","Échéance","Reste",""],debts.map(x=>tr([esc(x.title),x.dueDate?niceDate(x.dueDate):"Non renseignée",money(x.balance)+" "+(x.list==="sales"?"à encaisser":"à payer"),btn(x.list==="sales"?"Encaisser":"Payer","payment","button small secondary",'data-list="'+x.list+'" data-id="'+esc(x.id)+'"')]))):empty("Les règlements sont à jour.","Aucun paiement ni encaissement restant."))+'</section><section class="card"><div class="card-head"><h2>Apports de trésorerie</h2>'+btn("Ajouter un apport","contribution","button secondary")+'</div>'+note("Un apport augmente l’argent disponible. Il ne compte pas comme une vente ou un bénéfice.")+(state.contributions.length?table(["Date","Libellé","Montant"],state.contributions.slice().reverse().map(x=>tr([niceDate(x.date),esc(x.label),money(x.amount)]))):"")+'</section><section class="card"><h2>Votre ferme, dans la poche.</h2><p>Gardez Clair Ferme sur votre écran d’accueil pour retrouver vos cycles en un geste.</p>'+btn("Ajouter à mon écran d’accueil","install-app","button secondary")+btn("Revoir l’ouverture animée","replay-intro","button text")+'</section><div class="demo-link">'+(mode==="demo"?btn("Revenir à mes données","real","button text"):btn("Explorer un exemple fictif","demo","button text"))+'</div>';
 }
 function dialog(title,body,type,submit="Enregistrer"){
- const el=$("#dialog");el.innerHTML='<div class="dialog-head"><h2 id="dialog-title">'+title+'</h2>'+btn(icon("close"),"dismiss","icon-button",'aria-label="Fermer"')+'</div>'+(type?'<form data-form="'+type+'"><div class="dialog-body">'+body+'<p class="form-error" role="alert" hidden></p></div><div class="dialog-footer">'+btn("Annuler","dismiss","button text")+'<button type="submit" class="button">'+submit+'</button></div></form>':'<div class="dialog-body">'+body+'</div>');
+ const el=$("#dialog");
+ if(!el.open){dialogOpener=document.activeElement;const origin=dialogOpener?.closest("[data-action]");dialogOrigin=origin?{action:origin.dataset.action,id:origin.dataset.id}:null;dialogTrail=[];}
+ el.dataset.screen=type||"";
+ el.innerHTML='<div class="dialog-head">'+(dialogTrail.length?btn(icon("arrow"),"dialog-back","icon-button back-button",'aria-label="Retour"'):"")+'<h2 id="dialog-title">'+title+'</h2>'+btn(icon("close"),"dismiss","icon-button",'aria-label="Fermer"')+'</div>'+(type?'<form data-form="'+type+'"><div class="dialog-body">'+body+'<p class="form-error" role="alert" hidden></p></div><div class="dialog-footer">'+btn("Annuler","dismiss","button text")+'<button type="submit" class="button">'+submit+'</button></div></form>':'<div class="dialog-body">'+body+'</div>');
  if(!el.open)el.showModal();
 }
-function closeDialog(){$("#dialog").close();}
+function restoreDialogFocus(){
+ if($("#dialog").open)return;
+ const target=dialogOpener?.isConnected?dialogOpener:dialogOrigin?[...document.querySelectorAll("[data-action]")].find(el=>el.dataset.action===dialogOrigin.action&&el.dataset.id===dialogOrigin.id):null;
+ (target||$("#main"))?.focus({preventScroll:true});
+}
+function closeDialog(){dialogTrail=[];resumeConsumption=false;$("#dialog").close();}
+$("#dialog").addEventListener("close",()=>{if(!$("#dialog").open){dialogTrail=[];resumeConsumption=false;restoreDialogFocus();}});
 function cycleBody(first=false,previous=null){
  const p=previous?.params||{},base=previous?.budget||zero();
  return (first?'<p class="intro">Vos hypothèses donnent un cap. Vous enregistrerez ensuite les achats, les pertes et les ventes réelles.</p><h3 class="form-section">Votre ferme</h3><div class="form-grid">'+field("Nom de la ferme","farmName",state.settings.farmName,"text",'required maxlength="200"')+field("Argent disponible au départ (FCFA)","openingCash",0,"number",'data-signed="true"')+'</div>':"")+
@@ -185,7 +214,7 @@ function actionForm(kind,data={}){
  const c=state.cycles.find(c=>c.id===state.selectedCycleId),m=c?metrics(state,c.id):null;
  if(["expense","use","sale","loss","revise"].includes(kind)&&(!c||c.closedAt)){toast(c?"Ce cycle est clôturé. Sélectionnez un cycle ouvert.":"Configurez d’abord un cycle.");return;}
  if(kind==="setup"||kind==="cycle"||kind==="next-cycle"){dialog(kind==="setup"?"Votre premier cycle":kind==="next-cycle"?"Préparer le cycle suivant":"Créer un cycle",cycleBody(kind==="setup",kind==="next-cycle"?c:null),kind==="setup"?"setup":"cycle","Créer mon cycle");fixNumberAttrs();updatePlan();return;}
- if(kind==="quick"){dialog("Qu’allez-vous enregistrer ?",'<div class="quick-options">'+[["expense","Dépense","Poussins, soins, énergie, location…"],["lot","Achat d’aliments","Ajouter un lot au stock commun"],["use","Aliments consommés","Affecter des kg à ce cycle"],["sale","Vente de poulets","Quantité, prix et encaissement"],["loss","Perte de poulets","Actualiser l’effectif présent"]].map(([a,t,d])=>'<button class="quick-option" data-action="'+a+'"><strong>'+t+'</strong><span>'+d+'</span>'+icon("arrow")+'</button>').join("")+'</div>');return;}
+ if(kind==="quick"){dialog("Qu’allez-vous enregistrer ?",'<div class="quick-options">'+[["expense","Dépense","Poussins, soins, énergie, location…"],["lot","Achat d’aliments","Ajouter un lot au stock commun"],["use","Aliments consommés","Affecter des kg à ce cycle"],["sale","Vente de poulets","Quantité, prix et encaissement"],["loss","Perte de poulets","Actualiser l’effectif présent"]].map(([a,t,d])=>'<button class="quick-option" data-action="'+a+'"><strong>'+t+'</strong><span>'+d+'</span>'+icon("arrow")+'</button>').join("")+'</div>');$("#dialog").dataset.screen="quick";return;}
  if(kind==="expense"){
   dialog("Enregistrer une dépense",note("Cycle : "+esc(c.name))+'<div class="form-grid">'+field("Libellé","label","","text",'required maxlength="200"')+select("Poste","category",KEYS.filter(k=>k!=="aliments").map(k=>option(k,CATEGORIES[k])).join(""))+dateField()+field("Fournisseur (facultatif)","supplier","","text",'maxlength="200"')+'</div><div class="form-grid">'+moneyPaid()+'</div>'+check("planned","Cette dépense était déjà prévue dans le budget")+note("Si elle était prévue, elle réduit le reste à engager. Décochez pour une dépense imprévue."),"expense");return;
  }
@@ -194,7 +223,7 @@ function actionForm(kind,data={}){
  }
  if(kind==="use"){
   const available=stock(state).filter(l=>l.leftKg>0);
-  if(!available.length){toast("Ajoutez d’abord un achat d’aliments au stock.");return;}
+  if(!available.length){dialog("Votre stock est vide",'<p>Pour noter une consommation, ajoutez d’abord les aliments achetés. Vous pourrez ensuite reprendre cette saisie.</p>'+btn("Acheter des aliments","stock-buy","button full"));$("#dialog").dataset.screen="stock-empty";return;}
   dialog("Noter les aliments consommés",note("Cycle : "+esc(c.name))+'<div class="form-grid">'+select("Lot utilisé","lotId",available.map(l=>option(l.id,l.name+" · "+qty(l.leftKg)+" kg disponibles")).join(""))+field("Quantité consommée (kg)","kg","","number",'required data-decimal="true"')+dateField()+'</div>'+check("planned","Cette consommation était prévue dans le budget"),"use");fixNumberAttrs();return;
  }
  if(kind==="sale"){
@@ -266,7 +295,8 @@ document.addEventListener("submit",e=>{
   else if(type==="import-confirm"){save(pendingImport);pendingImport=null;}
   else if(type==="reset-corrupt"){localStorage.removeItem(STORE);savedRaw=null;state=blank();loadError=null;render();}
   else perform(type,d);
-  closeDialog();if(["setup","cycle","import-confirm"].includes(type))window.scrollTo({top:0,left:0});if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
+  const resume=type==="lot"&&resumeConsumption;
+  closeDialog();if(resume)actionForm("use");if(["setup","cycle","import-confirm"].includes(type))window.scrollTo({top:0,left:0});if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
  }catch(err){const out=form.querySelector(".form-error");out.hidden=false;out.textContent=err.message;out.scrollIntoView({block:"nearest"});}
 });
 document.addEventListener("input",e=>{if(e.target.closest("#dialog"))updatePlan();});
@@ -277,15 +307,20 @@ document.addEventListener("change",e=>{
  }
 });
 document.addEventListener("click",async e=>{
- const link=e.target.closest("[data-page]");if(link){e.preventDefault();page=link.dataset.page;render();window.scrollTo({top:0});return;}
+ const link=e.target.closest("[data-page]");if(link){e.preventDefault();navigate(link.dataset.page);return;}
  const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action;
  try{
+ if(a==="back"){navigate("home",{back:true});return;}
+ if(a==="dialog-back"){const previous=dialogTrail.pop();if(previous){$("#dialog").innerHTML=previous.html;$("#dialog").dataset.screen=previous.screen;resumeConsumption=false;$("#dialog").querySelector("button")?.focus();}return;}
+ const current=$("#dialog");
+ if(current.open&&b.closest("#dialog")&&["quick","stock-empty"].includes(current.dataset.screen)&&!["dismiss"].includes(a)){dialogTrail.push({html:current.innerHTML,screen:current.dataset.screen});}
+ if(a==="stock-buy"){resumeConsumption=true;actionForm("lot");return;}
  if(a==="replay-intro"){window.dispatchEvent(new Event("clair:replay-intro"));return;}
  if(a==="install-app"){dialog("Clair Ferme sur votre téléphone",'<div class="install-guide">'+mascot("install-pia")+'<h3>Un geste pour retrouver votre ferme.</h3><p>Sur iPhone, ouvrez ce site dans Safari, touchez <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.</p><p>Sur Android, ouvrez le menu de Chrome puis <strong>Ajouter à l’écran d’accueil</strong> ou <strong>Installer l’application</strong>.</p><p class="helper">Après la première ouverture complète, l’application peut aussi se rouvrir sans connexion. Vos saisies restent enregistrées sur cet appareil.</p></div>');return;}
  if(a==="theme"){theme=theme==="dark"?"light":"dark";applyTheme();try{localStorage.setItem("clair.ferme.appearance.v3",theme);}catch{}render();return;}
- if(a==="go-settings"){page="settings";render();window.scrollTo({top:0,left:0});return;}
+ if(a==="go-settings"){navigate("settings",{section:"settlements"});return;}
  if(a==="dismiss"){closeDialog();return;}
- if(a==="go-journal"){page="journal";render();window.scrollTo({top:0,left:0});return;}
+ if(a==="go-journal"){navigate("journal");return;}
  if(a==="select"){perform("select",{id:b.dataset.id});return;}
  if(a==="backup"){download(JSON.stringify(state,null,2),"clair-ferme-"+today()+".json","application/json");return;}
  if(a==="csv"){download(csv(state),"clair-ferme-journal-"+today()+".csv","text/csv;charset=utf-8");return;}
@@ -296,7 +331,7 @@ document.addEventListener("click",async e=>{
   closeDialog();clearTimeout(toastTimer);$("#toast").classList.remove("visible");mode=a==="demo"?"demo":"real";loadError=null;
   if(mode==="demo"){try{const raw=localStorage.getItem(DEMO);savedRaw=raw;state=raw?validate(JSON.parse(raw)):demo();}catch{state=demo();}}
   else load();
-  page="home";render();window.scrollTo({top:0,left:0});return;
+  trail.length=0;page="home";render();window.scrollTo({top:0,left:0});return;
  }
  actionForm(a,b.dataset);fixNumberAttrs();
  }catch(err){toast(err.message);}

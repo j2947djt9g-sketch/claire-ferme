@@ -1,42 +1,55 @@
 (()=>{
  const layer=document.getElementById("launch-screen"),app=document.getElementById("app");
  if(!layer||!app)return;
- const started=performance.now();
- let ready=false,replaying=false,endTimer,failTimer,returnFocus;
- const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
- function release(){
+ const skip=document.getElementById("launch-skip"),retry=document.getElementById("launch-retry");
+ const motion=window.matchMedia("(prefers-reduced-motion: reduce)");
+ let ready=false,preparing=false,endTimer,failTimer,returnFocus;
+ function release(skipped=false){
+  if(!ready||layer.hidden||layer.classList.contains("is-leaving"))return;
   clearTimeout(failTimer);clearTimeout(endTimer);
+  const focusInside=layer.contains(document.activeElement);
   app.inert=false;app.removeAttribute("aria-busy");
-  layer.classList.add("is-leaving");layer.setAttribute("aria-hidden","true");layer.inert=true;
+  layer.classList.toggle("is-skipped",skipped);layer.classList.add("is-leaving");
+  layer.setAttribute("aria-hidden","true");layer.inert=true;
   endTimer=setTimeout(()=>{
-   layer.hidden=true;layer.classList.remove("is-leaving");replaying=false;
-   if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null;
-  },reduced()?0:700);
+   layer.hidden=true;layer.classList.remove("is-playing","is-leaving","is-skipped");
+   if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
+   else if(focusInside)document.querySelector("#main")?.focus({preventScroll:true});
+   returnFocus=null;
+  },motion.matches?0:skipped?180:1150);
+ }
+ function play(){
+  layer.classList.add("is-playing");skip.hidden=false;
+  endTimer=setTimeout(()=>release(),motion.matches?0:2600);
  }
  async function finish(){
-  if(ready)return;ready=true;
-  const pic=document.querySelector(".pia.hero,.pia.welcome-pia");
-  if(pic&&typeof pic.decode==="function")await Promise.race([pic.decode().catch(()=>{}),new Promise(resolve=>setTimeout(resolve,2500))]);
-  const remaining=reduced()?0:Math.max(0,400-(performance.now()-started));
-  endTimer=setTimeout(release,remaining);
+  if(preparing)return;preparing=true;
+  const images=[layer.querySelector(".launch-pia"),document.querySelector(".pia.hero,.pia.welcome-pia")].filter(Boolean);
+  await Promise.race([Promise.all(images.map(pic=>typeof pic.decode==="function"?pic.decode().catch(()=>{}):Promise.resolve())),new Promise(resolve=>setTimeout(resolve,2500))]);
+  ready=true;clearTimeout(failTimer);layer.classList.remove("has-error");retry.hidden=true;
+  document.getElementById("launch-status").textContent="Votre ferme prend vie.";
+  play();
  }
- document.getElementById("launch-retry")?.addEventListener("click",()=>location.reload());
+ skip?.addEventListener("click",()=>release(true));
+ retry?.addEventListener("click",()=>location.reload());
  failTimer=setTimeout(()=>{
   if(ready)return;
   layer.classList.add("has-error");
   document.getElementById("launch-status").textContent="L’ouverture prend plus de temps que prévu.";
-  document.getElementById("launch-retry").hidden=false;
+  retry.hidden=false;
  },12000);
  window.addEventListener("clair:ready",finish,{once:true});
  if(window.__clairAppReady)finish();
  window.addEventListener("clair:replay-intro",()=>{
-  if(replaying)return;replaying=true;clearTimeout(endTimer);
-  returnFocus=document.activeElement;
-  layer.hidden=false;layer.inert=false;layer.classList.remove("is-leaving","has-error");
-  layer.removeAttribute("aria-hidden");document.getElementById("launch-retry").hidden=true;
-  document.getElementById("launch-status").textContent="Votre ferme, au clair.";
+  if(!ready||!layer.hidden)return;
+  returnFocus=document.activeElement;clearTimeout(endTimer);
+  layer.hidden=false;layer.inert=false;layer.removeAttribute("aria-hidden");
+  layer.classList.remove("is-playing","is-leaving","is-skipped","has-error");retry.hidden=true;skip.hidden=true;
   app.inert=true;
-  layer.querySelectorAll(".launch-brand,.launch-dots i").forEach(el=>el.getAnimations().forEach(animation=>{animation.cancel();animation.play();}));
-  endTimer=setTimeout(release,reduced()?300:850);
+  // Commit the reset before replaying the same CSS scene.
+  void layer.offsetWidth;
+  document.getElementById("launch-status").textContent="Votre ferme prend vie.";
+  play();
  });
+ motion.addEventListener("change",()=>{if(motion.matches)release(true);});
 })();

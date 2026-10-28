@@ -2,6 +2,7 @@ import {test,expect} from "@playwright/test";
 import {outageOrigin} from "./offline-origin.mjs";
 const D=page=>page.getByRole("dialog");
 async function setup(page,url="/"){
+ await page.emulateMedia({reducedMotion:"reduce"});
  await page.goto(url);
  await page.getByRole("button",{name:/Configurer mon premier cycle/}).click();
  const d=D(page);
@@ -256,6 +257,7 @@ test("les saisies existantes restent intactes avec le nouveau thème par défaut
  expect(await data(page)).toEqual(before);
 });
 test("l’accueil illustré et le premier bouton restent utilisables sur les formats mobiles",async({page},testInfo)=>{
+ await page.emulateMedia({reducedMotion:"reduce"});
  for(const [width,height]of [[320,664],[390,664],[390,844],[768,1024],[1024,768],[844,390]]){
   await page.setViewportSize({width,height});await page.goto("/");
   await expect(page.locator("#launch-screen")).toBeHidden();

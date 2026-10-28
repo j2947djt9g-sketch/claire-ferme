@@ -62,3 +62,16 @@ test("sans stock on peut acheter puis reprendre la consommation",async({page})=>
  await expect(d.getByRole("heading",{name:"Noter les aliments consommés",exact:true})).toBeVisible();
  await expect(d.getByLabel("Lot utilisé",{exact:true})).toContainText("Premier stock");
 });
+
+test("la relecture déroule la scène entière puis retrouve son bouton",async({page})=>{
+ await page.emulateMedia({reducedMotion:"reduce"});await demo(page);
+ await page.getByRole("navigation").getByRole("button",{name:"Sauvegarde",exact:true}).click();
+ await page.emulateMedia({reducedMotion:"no-preference"});
+ const replay=page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true});
+ const start=Date.now();await replay.click();
+ await expect(page.locator(".launch-pia")).toBeVisible();
+ await page.waitForTimeout(1800);await expect(page.locator("#launch-screen")).toBeVisible();
+ await expect(page.locator("#launch-screen")).toBeHidden({timeout:6000});
+ expect(Date.now()-start).toBeGreaterThanOrEqual(3400);
+ await expect(replay).toBeFocused();
+});

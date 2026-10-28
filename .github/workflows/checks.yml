@@ -21,7 +21,7 @@ jobs:
       - name: Installer les outils de test
         run: npm install --no-package-lock --ignore-scripts
       - name: Vérifier les parcours sur ordinateur, téléphone et Safari
-        run: npx playwright test fluidity.spec.mjs
+        run: npm run test:browser
       - uses: actions/upload-artifact@v5
         if: always()
         with:

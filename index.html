@@ -13,17 +13,19 @@
 <link rel="apple-touch-icon" href="assets/pia-flat.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preload" as="image" href="assets/pia-flat.png">
-<link rel="stylesheet" href="launch.css?v=0.3.0">
-<link rel="stylesheet" href="styles.css?v=0.3.0">
-<link rel="stylesheet" href="pasture.css?v=0.3.0">
-<script src="src/launch.js?v=0.3.0" defer></script>
-<script type="module" src="src/app.mjs?v=0.3.0"></script>
+<link rel="stylesheet" href="launch.css?v=0.4.0">
+<link rel="stylesheet" href="styles.css?v=0.4.0">
+<link rel="stylesheet" href="pasture.css?v=0.4.0">
+<script src="src/launch.js?v=0.4.0" defer></script>
+<script type="module" src="src/app.mjs?v=0.4.0"></script>
 <script type="module" src="src/pwa.mjs"></script>
 </head>
 <body>
 <a class="skip" href="#main">Aller au contenu</a>
 <div id="launch-screen" role="status" aria-label="Ouverture de Clair Ferme" aria-live="polite">
  <div class="launch-curtain" aria-hidden="true"></div>
+ <div class="launch-scene" aria-hidden="true"><div class="launch-landscape"></div><span class="launch-ground-shadow"></span><img class="launch-pia" src="assets/pia-flat.png" alt="" width="1120" height="1376" decoding="async" fetchpriority="high"></div>
+ <button id="launch-skip" type="button" hidden>Passer l’animation</button>
  <div class="launch-brand">
   <span class="launch-monogram" aria-hidden="true">c<span></span></span>
   <strong class="launch-title">clair<span>ferme</span></strong>
