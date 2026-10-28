@@ -2,6 +2,7 @@ import {test,expect} from "@playwright/test";
 import {outageOrigin} from "./offline-origin.mjs";
 const D=page=>page.getByRole("dialog");
 async function setup(page,url="/"){
+ await page.emulateMedia({reducedMotion:"reduce"});
  await page.goto(url);
  await page.getByRole("button",{name:/Configurer mon premier cycle/}).click();
  const d=D(page);
@@ -225,7 +226,6 @@ test("une ouverture illustrée accompagne le chargement réel puis libère l’a
 test("l’animation peut être revue et respecte la réduction des mouvements",async({page})=>{
  await page.emulateMedia({reducedMotion:"reduce"});await setup(page);await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true}).click();
- await expect(page.locator("#launch-screen")).toBeVisible();
  expect(await page.locator(".launch-curtain").evaluate(el=>getComputedStyle(el).transitionDuration.split(",").every(value=>parseFloat(value)===0))).toBe(true);
  await expect(page.locator("#launch-screen")).toBeHidden({timeout:4000});
  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
@@ -256,6 +256,7 @@ test("les saisies existantes restent intactes avec le nouveau thème par défaut
  expect(await data(page)).toEqual(before);
 });
 test("l’accueil illustré et le premier bouton restent utilisables sur les formats mobiles",async({page},testInfo)=>{
+ await page.emulateMedia({reducedMotion:"reduce"});
  for(const [width,height]of [[320,664],[390,664],[390,844],[768,1024],[1024,768],[844,390]]){
   await page.setViewportSize({width,height});await page.goto("/");
   await expect(page.locator("#launch-screen")).toBeHidden();

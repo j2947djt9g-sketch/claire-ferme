@@ -30,3 +30,25 @@ html[data-theme=dark] .app-wall{background:radial-gradient(ellipse at 100% 0,#29
 .pasture-welcome .pasture-pia>span{top:-22px;left:50%;transform:translateX(-50%) rotate(-3deg);font-size:10px;z-index:2;padding:7px 10px}
 @media(min-width:1000px){.pasture-welcome .welcome-story>p{font-size:15px}.pasture-welcome .welcome-card>p{font-size:14px}.pasture-welcome .pasture-pia>span{top:-20px;font-size:12px;padding:10px 14px}}
 @media(max-height:540px) and (min-width:600px) and (max-width:1199px){.pasture-welcome .welcome-card>p{font-size:12px}.pasture-welcome .welcome-card h2{font-size:23px}.pasture-welcome .welcome-points{margin:6px 0 8px}.pasture-welcome .welcome-links{margin:4px 0}.pasture-welcome .welcome-links .button{font-size:11px;min-height:35px}.pasture-welcome .welcome-card>small{font-size:9px}.pasture-welcome .pasture-pia>span{font-size:9px;top:-17px}}
+
+/* Depth comes from light, materials and feedback, not extra controls. */
+:root,html[data-theme=light]{--shadow:0 2px 4px #25433105,0 12px 30px #2543310c,0 28px 55px #25433106}
+.card,.stat,.cycle-strip,.cycle-tile{box-shadow:var(--shadow);border-top-color:color-mix(in srgb,var(--paper) 75%,white)}
+.balance-section{background:radial-gradient(ellipse at 80% 0,#e2edc9aa,transparent 65%),linear-gradient(145deg,var(--paper),var(--soft));box-shadow:0 2px 0 #fff9 inset,0 18px 40px #31583215}
+.hero-character .pia{filter:drop-shadow(0 12px 8px #25432729)}
+.quick-action>span{box-shadow:0 2px 2px #fff9 inset,0 7px 12px #3158320d}
+.button:not(.text){box-shadow:0 1px 0 #ffffff35 inset,0 4px 8px #173d2c12}
+.button,.icon-button,.quick-action,.cycle-tile,.nav-item{touch-action:manipulation;transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+.button:active,.icon-button:active,.quick-action:active,.cycle-tile:active{transform:scale(.97)}
+.back-button{flex-shrink:0;width:44px;height:44px;min-width:44px;border:1px solid var(--line);background:var(--paper);box-shadow:0 3px 10px #173d2c09}
+.back-button .icon{transform:rotate(180deg)}
+.dialog-head .back-button{margin-right:10px}.dialog-head h2{flex:1;min-width:0}
+.settlements-card{scroll-margin-top:90px}
+.settlements-card h2:focus{outline:2px solid var(--accent);outline-offset:6px;border-radius:4px}
+.page-arrive{animation:page-arrive .22s ease-out both}
+html[data-theme=dark] .balance-section{background:radial-gradient(ellipse at 90% 0,#46654755,transparent 65%),linear-gradient(145deg,#284b35,#1c3b2d);box-shadow:0 1px 0 #a5c38820 inset,0 16px 40px #071c1740}
+html[data-theme=dark] .quick-action>span{box-shadow:0 1px 0 #a5c38825 inset,0 7px 12px #071c1720}
+@keyframes page-arrive{from{opacity:.4;translate:0 7px}to{opacity:1;translate:0 0}}
+@media(hover:hover) and (pointer:fine){.button:not(.text):hover,.cycle-tile:hover{transform:translateY(-2px);box-shadow:0 7px 16px #173d2c17}}
+@media(max-width:1199px){.topbar:has(.back-button) .mobile-brand{display:none}.topbar:has(.back-button) .top-label{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.topbar:has(.back-button){gap:12px}}
+@media(prefers-reduced-motion:reduce){.page-arrive{animation:none}.button,.icon-button,.quick-action,.cycle-tile,.nav-item{transition:none;transform:none!important}}
