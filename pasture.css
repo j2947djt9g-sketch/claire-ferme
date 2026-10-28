@@ -128,3 +128,5 @@ html[data-theme=dark] .nav-item.active{background:#b9d998;color:#183324}
 .welcome-horizon .brand-sub{font-size:13px;color:#344f38}
 .balance-caption.mobile-caption{color:#fff;text-decoration:underline;text-underline-offset:3px}
 progress::-webkit-progress-value{background:#126c3c}progress::-moz-progress-bar{background:#126c3c}
+
+html[data-theme=dark] progress::-webkit-progress-value{background:#b9d998}html[data-theme=dark] progress::-moz-progress-bar{background:#b9d998}
