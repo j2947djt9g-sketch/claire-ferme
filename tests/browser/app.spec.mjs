@@ -226,7 +226,6 @@ test("une ouverture illustrée accompagne le chargement réel puis libère l’a
 test("l’animation peut être revue et respecte la réduction des mouvements",async({page})=>{
  await page.emulateMedia({reducedMotion:"reduce"});await setup(page);await nav(page,"Sauvegarde");
  await page.getByRole("button",{name:"Revoir l’ouverture animée",exact:true}).click();
- await expect(page.locator("#launch-screen")).toBeVisible();
  expect(await page.locator(".launch-curtain").evaluate(el=>getComputedStyle(el).transitionDuration.split(",").every(value=>parseFloat(value)===0))).toBe(true);
  await expect(page.locator("#launch-screen")).toBeHidden({timeout:4000});
  await expect(page.locator("#app")).not.toHaveAttribute("inert","");

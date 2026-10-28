@@ -9,7 +9,7 @@ let theme="light";try{theme=localStorage.getItem("clair.ferme.appearance.v3")===
 function applyTheme(){document.documentElement.dataset.theme=theme;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",theme==="dark"?"#122d24":"#fbf9f2");}
 applyTheme();
 const launchLandscape=document.querySelector(".launch-landscape");
-if(launchLandscape)launchLandscape.innerHTML=farmScene("launch");
+if(launchLandscape){launchLandscape.innerHTML=farmScene("launch");launchLandscape.querySelector("svg")?.setAttribute("preserveAspectRatio","xMidYMax slice");}
 let state=blank(),page="home",mode="real",loadError=null,lastSaved=null,pendingImport=null,toastTimer,savedRaw=null;
 const icons={
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
@@ -70,12 +70,15 @@ function header(eyebrow,title,subtitle,actions=""){
 }
 const pageNames={home:"l’accueil",journal:"Opérations",stock:"Aliments",cycles:"Cycles",settings:"Plus"};
 const trail=[];
+const dialogDrafts=new Map();
+const controlIdentity=el=>el?.dataset?.action?{action:el.dataset.action,id:el.dataset.id}:el?.dataset?.page?{page:el.dataset.page}:null;
+const findControl=identity=>identity?[...document.querySelectorAll("[data-action],[data-page]")].find(el=>el.getClientRects().length&&Object.entries(identity).every(([key,value])=>el.dataset[key]===value)):null;
 let dialogTrail=[],dialogOpener=null,dialogOrigin=null,resumeConsumption=false;
-function navigate(next,{back=false,section}={}){
+function navigate(next,{back=false,section,origin=document.activeElement}={}){
  if(!Object.hasOwn(pageNames,next))return;
- let position=0;
- if(back){const previous=trail.pop();next=previous?.page||"home";position=previous?.scroll||0;}
- else if(page!==next){trail.push({page,scroll:window.scrollY});if(trail.length>20)trail.shift();}
+ let position=0,returnTo=null;
+ if(back){const previous=trail.pop();next=previous?.page||"home";position=previous?.scroll||0;returnTo=previous?.origin;}
+ else if(page!==next){trail.push({page,scroll:window.scrollY,origin:controlIdentity(origin)});if(trail.length>20)trail.shift();}
  const changed=page!==next;
  page=next;if(changed)render();
  requestAnimationFrame(()=>{
@@ -83,7 +86,7 @@ function navigate(next,{back=false,section}={}){
   if(changed)main.classList.add("page-arrive");
   const target=section?document.getElementById(section):null;
   if(target){const heading=target.querySelector("h2");heading?.setAttribute("tabindex","-1");heading?.focus({preventScroll:true});target.scrollIntoView({block:"start"});}
-  else{main.focus({preventScroll:true});window.scrollTo({top:position,left:0,behavior:"instant"});}
+  else{(findControl(returnTo)||main).focus({preventScroll:true});window.scrollTo({top:position,left:0,behavior:"instant"});}
  });
 }
 function render(){
@@ -186,18 +189,25 @@ function settingsPage(){
 }
 function dialog(title,body,type,submit="Enregistrer"){
  const el=$("#dialog");
- if(!el.open){dialogOpener=document.activeElement;const origin=dialogOpener?.closest("[data-action]");dialogOrigin=origin?{action:origin.dataset.action,id:origin.dataset.id}:null;dialogTrail=[];}
+ if(!el.open){dialogOpener=document.activeElement;const origin=dialogOpener?.closest("[data-action]");dialogOrigin=controlIdentity(origin);dialogTrail=[];dialogDrafts.clear();}
  el.dataset.screen=type||"";
  el.innerHTML='<div class="dialog-head">'+(dialogTrail.length?btn(icon("arrow"),"dialog-back","icon-button back-button",'aria-label="Retour"'):"")+'<h2 id="dialog-title">'+title+'</h2>'+btn(icon("close"),"dismiss","icon-button",'aria-label="Fermer"')+'</div>'+(type?'<form data-form="'+type+'"><div class="dialog-body">'+body+'<p class="form-error" role="alert" hidden></p></div><div class="dialog-footer">'+btn("Annuler","dismiss","button text")+'<button type="submit" class="button">'+submit+'</button></div></form>':'<div class="dialog-body">'+body+'</div>');
+ const draft=type&&dialogDrafts.get(type),form=el.querySelector("form");
+ if(draft&&form){
+  for(const saved of draft){const input=form.elements.namedItem(saved.name);if(input){input.value=saved.value;input.checked=saved.checked;input.disabled=saved.disabled;}}
+  el.querySelectorAll("[data-if]").forEach(target=>{const control=form.elements.namedItem(target.dataset.if);target.hidden=!!control?.checked;target.querySelectorAll("input").forEach(input=>input.disabled=target.hidden);});
+  updatePlan();
+ }
  if(!el.open)el.showModal();
+ else el.querySelector(".dialog-body input:not([type=hidden]),.dialog-body select,.dialog-body button")?.focus({preventScroll:true});
 }
 function restoreDialogFocus(){
  if($("#dialog").open)return;
- const target=dialogOpener?.isConnected?dialogOpener:dialogOrigin?[...document.querySelectorAll("[data-action]")].find(el=>el.dataset.action===dialogOrigin.action&&el.dataset.id===dialogOrigin.id):null;
+ const target=dialogOpener?.isConnected?dialogOpener:findControl(dialogOrigin);
  (target||$("#main"))?.focus({preventScroll:true});
 }
-function closeDialog(){dialogTrail=[];resumeConsumption=false;$("#dialog").close();}
-$("#dialog").addEventListener("close",()=>{if(!$("#dialog").open){dialogTrail=[];resumeConsumption=false;restoreDialogFocus();}});
+function closeDialog(){dialogTrail=[];dialogDrafts.clear();resumeConsumption=false;$("#dialog").close();}
+$("#dialog").addEventListener("close",()=>{if(!$("#dialog").open){dialogTrail=[];dialogDrafts.clear();resumeConsumption=false;restoreDialogFocus();}});
 function cycleBody(first=false,previous=null){
  const p=previous?.params||{},base=previous?.budget||zero();
  return (first?'<p class="intro">Vos hypothèses donnent un cap. Vous enregistrerez ensuite les achats, les pertes et les ventes réelles.</p><h3 class="form-section">Votre ferme</h3><div class="form-grid">'+field("Nom de la ferme","farmName",state.settings.farmName,"text",'required maxlength="200"')+field("Argent disponible au départ (FCFA)","openingCash",0,"number",'data-signed="true"')+'</div>':"")+
@@ -295,8 +305,8 @@ document.addEventListener("submit",e=>{
   else if(type==="import-confirm"){save(pendingImport);pendingImport=null;}
   else if(type==="reset-corrupt"){localStorage.removeItem(STORE);savedRaw=null;state=blank();loadError=null;render();}
   else perform(type,d);
-  const resume=type==="lot"&&resumeConsumption;
-  closeDialog();if(resume)actionForm("use");if(["setup","cycle","import-confirm"].includes(type))window.scrollTo({top:0,left:0});if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
+  const resume=type==="lot"&&resumeConsumption,origin={element:dialogOpener,identity:dialogOrigin};
+  closeDialog();if(resume){actionForm("use");dialogOpener=origin.element;dialogOrigin=origin.identity;}if(["setup","cycle","import-confirm"].includes(type))window.scrollTo({top:0,left:0});if(type==="setup"||type==="import-confirm")toast("Vos données sont enregistrées sur cet appareil.");
  }catch(err){const out=form.querySelector(".form-error");out.hidden=false;out.textContent=err.message;out.scrollIntoView({block:"nearest"});}
 });
 document.addEventListener("input",e=>{if(e.target.closest("#dialog"))updatePlan();});
@@ -307,20 +317,20 @@ document.addEventListener("change",e=>{
  }
 });
 document.addEventListener("click",async e=>{
- const link=e.target.closest("[data-page]");if(link){e.preventDefault();navigate(link.dataset.page);return;}
+ const link=e.target.closest("[data-page]");if(link){e.preventDefault();navigate(link.dataset.page,{origin:link});return;}
  const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action;
  try{
  if(a==="back"){navigate("home",{back:true});return;}
- if(a==="dialog-back"){const previous=dialogTrail.pop();if(previous){$("#dialog").innerHTML=previous.html;$("#dialog").dataset.screen=previous.screen;resumeConsumption=false;$("#dialog").querySelector("button")?.focus();}return;}
+ if(a==="dialog-back"){const form=$("#dialog form");if(form)dialogDrafts.set(form.dataset.form,[...form.elements].filter(input=>input.name).map(input=>({name:input.name,value:input.value,checked:!!input.checked,disabled:input.disabled})));const previous=dialogTrail.pop();if(previous){$("#dialog").innerHTML=previous.html;$("#dialog").dataset.screen=previous.screen;resumeConsumption=false;$("#dialog").querySelector("button")?.focus();}return;}
  const current=$("#dialog");
  if(current.open&&b.closest("#dialog")&&["quick","stock-empty"].includes(current.dataset.screen)&&!["dismiss"].includes(a)){dialogTrail.push({html:current.innerHTML,screen:current.dataset.screen});}
  if(a==="stock-buy"){resumeConsumption=true;actionForm("lot");return;}
  if(a==="replay-intro"){window.dispatchEvent(new Event("clair:replay-intro"));return;}
  if(a==="install-app"){dialog("Clair Ferme sur votre téléphone",'<div class="install-guide">'+mascot("install-pia")+'<h3>Un geste pour retrouver votre ferme.</h3><p>Sur iPhone, ouvrez ce site dans Safari, touchez <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.</p><p>Sur Android, ouvrez le menu de Chrome puis <strong>Ajouter à l’écran d’accueil</strong> ou <strong>Installer l’application</strong>.</p><p class="helper">Après la première ouverture complète, l’application peut aussi se rouvrir sans connexion. Vos saisies restent enregistrées sur cet appareil.</p></div>');return;}
  if(a==="theme"){theme=theme==="dark"?"light":"dark";applyTheme();try{localStorage.setItem("clair.ferme.appearance.v3",theme);}catch{}render();return;}
- if(a==="go-settings"){navigate("settings",{section:"settlements"});return;}
+ if(a==="go-settings"){navigate("settings",{section:"settlements",origin:b});return;}
  if(a==="dismiss"){closeDialog();return;}
- if(a==="go-journal"){navigate("journal");return;}
+ if(a==="go-journal"){navigate("journal",{origin:b});return;}
  if(a==="select"){perform("select",{id:b.dataset.id});return;}
  if(a==="backup"){download(JSON.stringify(state,null,2),"clair-ferme-"+today()+".json","application/json");return;}
  if(a==="csv"){download(csv(state),"clair-ferme-journal-"+today()+".csv","text/csv;charset=utf-8");return;}

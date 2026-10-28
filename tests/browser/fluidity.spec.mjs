@@ -27,6 +27,7 @@ test("le retour retrouve la page et la position de lecture",async({page})=>{
  await page.getByRole("button",{name:/Retour à l’accueil/i}).click();
  await expect(page.locator(".balance-section")).toBeVisible();
  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeCloseTo(before,0);
+ await expect(all).toBeFocused();
 });
 test("les raccourcis de trésorerie amènent directement aux règlements",async({page})=>{
  await page.emulateMedia({reducedMotion:"reduce"});await demo(page);
@@ -61,6 +62,8 @@ test("sans stock on peut acheter puis reprendre la consommation",async({page})=>
  await d.getByRole("button",{name:"Enregistrer",exact:true}).click();
  await expect(d.getByRole("heading",{name:"Noter les aliments consommés",exact:true})).toBeVisible();
  await expect(d.getByLabel("Lot utilisé",{exact:true})).toContainText("Premier stock");
+ await d.getByRole("button",{name:"Fermer",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Aliments consommés",exact:true})).toBeFocused();
 });
 
 test("la relecture déroule la scène entière puis retrouve son bouton",async({page})=>{
@@ -74,4 +77,21 @@ test("la relecture déroule la scène entière puis retrouve son bouton",async({
  await expect(page.locator("#launch-screen")).toBeHidden({timeout:6000});
  expect(Date.now()-start).toBeGreaterThanOrEqual(3400);
  await expect(replay).toBeFocused();
+});
+
+test("revenir au choix rapide conserve les champs déjà saisis",async({page})=>{
+ await page.emulateMedia({reducedMotion:"reduce"});await demo(page);
+ await page.getByRole("navigation").getByRole("button",{name:"Opérations",exact:true}).click();
+ await page.getByRole("button",{name:"Ajouter",exact:true}).click();
+ const d=page.getByRole("dialog");await d.getByRole("button",{name:/Dépense/}).click();
+ await d.getByLabel("Libellé",{exact:true}).fill("Transport en cours");
+ await d.getByLabel("Montant total (FCFA)",{exact:true}).fill("12345");
+ await d.getByLabel("Entièrement payé",{exact:true}).uncheck();
+ await d.getByLabel("Déjà payé (FCFA)",{exact:true}).fill("3000");
+ await d.getByRole("button",{name:"Retour",exact:true}).click();
+ await d.getByRole("button",{name:/Dépense/}).click();
+ await expect(d.getByLabel("Libellé",{exact:true})).toHaveValue("Transport en cours");
+ await expect(d.getByLabel("Montant total (FCFA)",{exact:true})).toHaveValue("12345");
+ await expect(d.getByLabel("Entièrement payé",{exact:true})).not.toBeChecked();
+ await expect(d.getByLabel("Déjà payé (FCFA)",{exact:true})).toHaveValue("3000");
 });
